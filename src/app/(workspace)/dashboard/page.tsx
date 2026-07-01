@@ -269,8 +269,8 @@ export default function DashboardPage() {
             {auditLogs.slice(0, 10).map((log) => (
               <div key={log.id} className="text-xs border-b border-slate-100 pb-3 last:border-0 last:pb-0">
                 <div className="flex justify-between items-center">
-                  <span className="font-extrabold text-slate-850">{log.user_name}</span>
-                  <span className="text-[10px] text-slate-450">
+                  <span className="font-extrabold text-slate-800">{log.user_name}</span>
+                  <span className="text-[10px] text-slate-400">
                     {new Date(log.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -288,7 +288,7 @@ export default function DashboardPage() {
               </div>
             ))}
             {auditLogs.length === 0 && (
-              <p className="text-center text-slate-450 p-6 text-xs">لا يوجد عمليات مسجلة حالياً.</p>
+              <p className="text-center text-slate-400 p-6 text-xs">لا يوجد عمليات مسجلة حالياً.</p>
             )}
           </div>
         </div>

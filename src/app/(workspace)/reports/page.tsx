@@ -131,9 +131,9 @@ export default function ReportsPage() {
   if (currentUser?.role === 'staff') {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-12 text-center max-w-lg mx-auto shadow-sm space-y-4">
-        <ShieldAlert className="w-16 h-16 text-red-650 mx-auto" />
+        <ShieldAlert className="w-16 h-16 text-red-600 mx-auto" />
         <h3 className="text-lg font-extrabold text-slate-800">صلاحيات غير كافية</h3>
-        <p className="text-xs text-slate-550 leading-relaxed font-medium">
+        <p className="text-xs text-slate-500 leading-relaxed font-medium">
           عذراً، تقتصر صلاحيات مركز التقارير والطباعة الرسمية على المدير العام والمستشارين المعتمدين بالشركة.
           يرجى التبديل لدور **(أ. سامح سمير)** أو **(مستشار أحمد رأفت)** من محاكي الصلاحيات أسفل القائمة الجانبية لتصفح وطباعة التقارير.
         </p>

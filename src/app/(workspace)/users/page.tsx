@@ -196,9 +196,9 @@ export default function UsersPage() {
   if (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'super_admin') {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-12 text-center max-w-lg mx-auto shadow-sm space-y-4" dir="rtl">
-        <ShieldAlert className="w-16 h-16 text-red-650 mx-auto animate-bounce" />
+        <ShieldAlert className="w-16 h-16 text-red-600 mx-auto animate-bounce" />
         <h3 className="text-lg font-extrabold text-slate-800">قسم مغلق وصلاحيات غير كافية</h3>
-        <p className="text-xs text-slate-550 leading-relaxed font-medium">
+        <p className="text-xs text-slate-500 leading-relaxed font-medium">
           عذراً، تقتصر صلاحية إنشاء المستخدمين وإدارة الصلاحيات (RBAC) بالكامل على المدير العام للمكتب أو مدير النظام.
           يرجى التبديل لدور **(أ. سامح سمير)** أو **(أ. عبد الرحمن عمرو)** من محاكي الصلاحيات أسفل القائمة الجانبية لتصفح هذا القسم.
         </p>
@@ -252,12 +252,12 @@ export default function UsersPage() {
         {loading ? (
           <div className="p-12 text-center space-y-3">
             <div className="w-8 h-8 border-4 border-slate-100 border-t-brand-gold rounded-full animate-spin mx-auto"></div>
-            <p className="text-xs text-slate-550 font-semibold">جاري جلب حسابات المستخدمين...</p>
+            <p className="text-xs text-slate-500 font-semibold">جاري جلب حسابات المستخدمين...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-150">
+              <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                 <tr>
                   <th className="p-4">اسم الموظف</th>
                   <th className="p-4">البريد الإلكتروني</th>
@@ -290,7 +290,7 @@ export default function UsersPage() {
                       <button
                         onClick={() => handleDeleteUser(u.id)}
                         disabled={u.id === currentUser?.id}
-                        className="text-slate-400 hover:text-red-650 transition-colors disabled:opacity-30 disabled:hover:text-slate-450"
+                        className="text-slate-400 hover:text-red-600 transition-colors disabled:opacity-30 disabled:hover:text-slate-400"
                         title={u.id === currentUser?.id ? 'لا يمكنك حذف حسابك الحالي النشط' : 'حذف هذا المستخدم'}
                       >
                         <Trash2 className="w-4 h-4" />

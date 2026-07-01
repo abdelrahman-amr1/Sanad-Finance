@@ -18,6 +18,16 @@ export default function LoginPage() {
   const [resolvingTenant, setResolvingTenant] = useState(true);
   const [isTenantMode, setIsTenantMode] = useState(false);
   const [tenantName, setTenantName] = useState('سند (Sanad) | المنصة الذكية لإدارة مكاتب المحاسبة والاستشارات');
+  const [showMockCards, setShowMockCards] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mock') === 'true' || params.get('demo') === 'true') {
+        setShowMockCards(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const resolveTenant = async () => {
@@ -226,7 +236,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleFormLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-350 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                 البريد الإلكتروني للعمل
               </label>
               <div className="relative">
@@ -238,13 +248,13 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="block w-full pr-10 pl-3 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 text-sm placeholder-slate-650 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all"
+                  className="block w-full pr-10 pl-3 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-350 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                 كلمة المرور
               </label>
               <div className="relative">
@@ -256,7 +266,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pr-10 pl-3 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 text-sm placeholder-slate-650 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all"
+                  className="block w-full pr-10 pl-3 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all"
                 />
               </div>
             </div>
@@ -274,8 +284,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Simulation logins (Only shown in Mock Mode) */}
-          {!isSupabaseConfigured && (
+          {/* Quick Simulation logins (Only shown in Mock Mode and when requested via URL query params) */}
+          {!isSupabaseConfigured && showMockCards && (
             <>
               {/* Separation line */}
               <div className="relative my-6">

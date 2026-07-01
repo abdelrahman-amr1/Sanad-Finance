@@ -317,7 +317,7 @@ export default function TasksPage() {
                     <span className="font-extrabold text-slate-900">{comm.client_name}</span>
                     <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[9px] font-bold rounded">جلسة {comm.stage}</span>
                   </div>
-                  <p className="text-[10px] text-slate-550 font-medium">{comm.subject}</p>
+                  <p className="text-[10px] text-slate-500 font-medium">{comm.subject}</p>
                   <div className="flex justify-between items-center text-[9px] text-slate-400 font-bold mt-2">
                     <span>قاعة: {comm.room_number || 'غير محددة'}</span>
                     <span>المبلغ: {comm.disputed_amount.toLocaleString()} ج.م</span>
@@ -408,7 +408,7 @@ export default function TasksPage() {
                   {currentUser?.role === 'admin' && (
                     <button 
                       onClick={() => handleDeleteTask(task.id)}
-                      className="text-slate-350 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                      className="text-slate-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

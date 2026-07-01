@@ -240,7 +240,7 @@ export default function CommitteesPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="ابحث باسم العميل أو المأمورية..."
-                className="w-full pr-9 pl-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs placeholder-slate-450 focus:outline-none focus:border-brand-gold transition-all"
+                className="w-full pr-9 pl-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs placeholder-slate-400 focus:outline-none focus:border-brand-gold transition-all"
               />
             </div>
             
@@ -288,7 +288,7 @@ export default function CommitteesPage() {
                 >
                   <div className="flex-1 min-w-0 pr-1">
                     <h4 className="font-extrabold text-slate-900 text-xs truncate">{comm.client_name}</h4>
-                    <p className="text-[10px] text-slate-450 mt-1 truncate">{comm.subject}</p>
+                    <p className="text-[10px] text-slate-400 mt-1 truncate">{comm.subject}</p>
                     <div className="flex items-center gap-3 mt-2 text-[9px] text-slate-500 font-medium">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-slate-400" />
@@ -365,7 +365,7 @@ export default function CommitteesPage() {
                             ? 'bg-slate-900 border-slate-900 text-white'
                             : isActive
                               ? 'bg-brand-gold border-brand-gold text-slate-950 shadow-md font-bold scale-110'
-                              : 'bg-white border-slate-200 text-slate-400 group-hover:border-slate-350'
+                              : 'bg-white border-slate-200 text-slate-400 group-hover:border-slate-300'
                         }`}>
                           {isCompleted ? (
                             <Check className="w-4 h-4" />
@@ -377,7 +377,7 @@ export default function CommitteesPage() {
                         <span className={`text-[10px] font-bold mt-2 transition-colors ${
                           isActive 
                             ? 'text-slate-950 font-black' 
-                            : 'text-slate-450 group-hover:text-slate-600'
+                            : 'text-slate-400 group-hover:text-slate-600'
                         }`}>
                           {st}
                         </span>
@@ -489,7 +489,7 @@ export default function CommitteesPage() {
                 {aiLoading && (
                   <div className="p-8 text-center space-y-3">
                     <div className="w-8 h-8 border-4 border-slate-100 border-t-brand-gold rounded-full animate-spin mx-auto"></div>
-                    <p className="text-xs text-slate-550 font-medium">يقوم Gemini الآن بقراءة ملف اللجنة ومقارنة الدفوع بأحدث القوانين الضريبية المصرية...</p>
+                    <p className="text-xs text-slate-500 font-medium">يقوم Gemini الآن بقراءة ملف اللجنة ومقارنة الدفوع بأحدث القوانين الضريبية المصرية...</p>
                   </div>
                 )}
 

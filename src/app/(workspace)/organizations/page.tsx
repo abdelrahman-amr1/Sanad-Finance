@@ -136,9 +136,9 @@ export default function OrganizationsPage() {
   if (currentUser && currentUser.role !== 'super_admin') {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-12 text-center max-w-lg mx-auto shadow-sm space-y-4" dir="rtl">
-        <ShieldAlert className="w-16 h-16 text-red-650 mx-auto animate-bounce" />
+        <ShieldAlert className="w-16 h-16 text-red-600 mx-auto animate-bounce" />
         <h3 className="text-lg font-extrabold text-slate-800">صلاحيات غير كافية</h3>
-        <p className="text-xs text-slate-550 leading-relaxed font-medium">
+        <p className="text-xs text-slate-500 leading-relaxed font-medium">
           عذراً، تقتصر صلاحية إضافة المكاتب الاستشارية وإدارة البنية التحتية بالكامل على **المدير العام لشركة سند للتمويل**.
           يرجى التبديل لدور **(أ. عبد الرحمن عمرو)** من محاكي الصلاحيات أسفل القائمة الجانبية لتصفح هذا القسم.
         </p>

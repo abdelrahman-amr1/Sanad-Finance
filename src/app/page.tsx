@@ -141,6 +141,8 @@ export default function LoginPage() {
               return;
             }
 
+            db.setCurrentUser(profile);
+
             confetti({
               particleCount: 80,
               spread: 60,

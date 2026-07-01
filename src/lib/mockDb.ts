@@ -83,43 +83,43 @@ export interface TaxLaw {
   content: string;
 }
 
-// Initial Seed Data
+// Initial Seed Data with valid PostgreSQL UUID strings for multi-tenant SaaS compatibility
 const defaultOrganizations: Organization[] = [
-  { id: 'org-1', name: 'Sameh Samir - A&B team', slug: 'sameh-samir-ab-team', status: 'active', created_at: new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString() },
-  { id: 'org-2', name: 'مكتب النور للاستشارات والضرائب', slug: 'al-nour-tax', status: 'active', created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() }
+  { id: '11111111-1111-1111-1111-111111111111', name: 'Sameh Samir - A&B team', slug: 'sameh-samir-ab-team', status: 'active', created_at: new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString() },
+  { id: '22222222-2222-2222-2222-222222222222', name: 'مكتب النور للاستشارات والضرائب', slug: 'al-nour-tax', status: 'active', created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() }
 ];
 
 const defaultProfiles: Profile[] = [
   { id: 'usr-super', name: 'أ. خالد سند', email: 'admin@sanadfinance.com', role: 'super_admin', avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=105&fit=crop&crop=faces' },
-  { id: 'usr-admin', name: 'أ. سامح سمير', email: 'admin@abteam.com', role: 'admin', organization_id: 'org-1', avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=faces' },
-  { id: 'usr-cons', name: 'مستشار أحمد رأفت', email: 'consultant@abteam.com', role: 'consultant', organization_id: 'org-1', avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=faces' },
-  { id: 'usr-staff', name: 'مهى علي', email: 'staff@abteam.com', role: 'staff', organization_id: 'org-1', avatar_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces' }
+  { id: 'usr-admin', name: 'أ. سامح سمير', email: 'admin@abteam.com', role: 'admin', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=faces' },
+  { id: 'usr-cons', name: 'مستشار أحمد رأفت', email: 'consultant@abteam.com', role: 'consultant', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=faces' },
+  { id: 'usr-staff', name: 'مهى علي', email: 'staff@abteam.com', role: 'staff', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces' }
 ];
 
 const defaultClients: Client[] = [
-  { id: 'cli-1', organization_id: 'org-1', name: 'شركة النيل للمقاولات والاستيراد', tax_card_number: '123-456-789', file_number: 'م/1209/دخل', mobile: '01012345678', email: 'info@nile-contracting.com', address: '12 شارع التسعين، التجمع الخامس، القاهرة', status: 'active', created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() },
-  { id: 'cli-2', organization_id: 'org-1', name: 'المصرية للحلول البرمجية', tax_card_number: '987-654-321', file_number: 'م/3490/مضافة', mobile: '01222446688', email: 'finance@egypt-software.com', address: 'المنطقة الحرة العامة، مدينة نصر، القاهرة', status: 'active', created_at: new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString() },
-  { id: 'cli-3', organization_id: 'org-1', name: 'مصانع الأمل للصناعات الغذائية', tax_card_number: '456-789-123', file_number: 'م/5567/دخل', mobile: '01144556677', email: 'tax@alamal-foods.com', address: 'المنطقة الصناعية السادسة، مدينة 6 أكتوبر', status: 'active', created_at: new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString() },
+  { id: 'cli-1', organization_id: '11111111-1111-1111-1111-111111111111', name: 'شركة النيل للمقاولات والاستيراد', tax_card_number: '123-456-789', file_number: 'م/1209/دخل', mobile: '01012345678', email: 'info@nile-contracting.com', address: '12 شارع التسعين، التجمع الخامس، القاهرة', status: 'active', created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() },
+  { id: 'cli-2', organization_id: '11111111-1111-1111-1111-111111111111', name: 'المصرية للحلول البرمجية', tax_card_number: '987-654-321', file_number: 'م/3490/مضافة', mobile: '01222446688', email: 'finance@egypt-software.com', address: 'المنطقة الحرة العامة، مدينة نصر، القاهرة', status: 'active', created_at: new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString() },
+  { id: 'cli-3', organization_id: '11111111-1111-1111-1111-111111111111', name: 'مصانع الأمل للصناعات الغذائية', tax_card_number: '456-789-123', file_number: 'م/5567/دخل', mobile: '01144556677', email: 'tax@alamal-foods.com', address: 'المنطقة الصناعية السادسة، مدينة 6 أكتوبر', status: 'active', created_at: new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString() },
   
   // Org 2 Seed Client
-  { id: 'cli-4', organization_id: 'org-2', name: 'مجموعة النور للشحن والتفريغ', tax_card_number: '234-567-890', file_number: 'م/7091/دخل', mobile: '01009988776', email: 'accounting@al-nour.com', address: 'ميناء الدخيلة، الإسكندرية', status: 'active', created_at: new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString() }
+  { id: 'cli-4', organization_id: '22222222-2222-2222-2222-222222222222', name: 'مجموعة النور للشحن والتفريغ', tax_card_number: '234-567-890', file_number: 'م/7091/دخل', mobile: '01009988776', email: 'accounting@al-nour.com', address: 'ميناء الدخيلة، الإسكندرية', status: 'active', created_at: new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString() }
 ];
 
 const defaultCommittees: Committee[] = [
-  { id: 'com-1', organization_id: 'org-1', client_id: 'cli-1', stage: 'طعن', subject: 'طعن على تقدير ضريبة أرباح تجارية وصناعية بقيمة مبالغ فيها', tax_authority: 'مأمورية ضرائب الشركات المساهمة بالقاهرة', disputed_amount: 450000.00, tax_years: '2019-2021', hearing_date: new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString(), room_number: 'قاعة 3 ب', status: 'pending', notes: 'تم تجهيز مذكرة الدفوع القانونية ومستندات الإهلاك السنوية لتفنيد التقدير الجزافي للمأمور الفاحص.', created_at: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString() },
-  { id: 'com-2', organization_id: 'org-1', client_id: 'cli-2', stage: 'فحص', subject: 'فحص ضريبة القيمة المضافة لشهور السنة المالية الماضية', tax_authority: 'مأمورية ضرائب مدينة نصر أول', disputed_amount: 180000.00, tax_years: '2023', hearing_date: new Date(Date.now() + 12 * 24 * 3600 * 1000).toISOString(), room_number: 'مكتب رئيس الفحص الثاني', status: 'in_progress', notes: 'الفاحص يطالب بتحليل فواتير المشتريات ومطابقتها ببيانات منظومة الفواتير الإلكترونية.', created_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() },
+  { id: 'com-1', organization_id: '11111111-1111-1111-1111-111111111111', client_id: 'cli-1', stage: 'طعن', subject: 'طعن على تقدير ضريبة أرباح تجارية وصناعية بقيمة مبالغ فيها', tax_authority: 'مأمورية ضرائب الشركات المساهمة بالقاهرة', disputed_amount: 450000.00, tax_years: '2019-2021', hearing_date: new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString(), room_number: 'قاعة 3 ب', status: 'pending', notes: 'تم تجهيز مذكرة الدفوع القانونية ومستندات الإهلاك السنوية لتفنيد التقدير الجزافي للمأمور الفاحص.', created_at: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString() },
+  { id: 'com-2', organization_id: '11111111-1111-1111-1111-111111111111', client_id: 'cli-2', stage: 'فحص', subject: 'فحص ضريبة القيمة المضافة لشهور السنة المالية الماضية', tax_authority: 'مأمورية ضرائب مدينة نصر أول', disputed_amount: 180000.00, tax_years: '2023', hearing_date: new Date(Date.now() + 12 * 24 * 3600 * 1000).toISOString(), room_number: 'مكتب رئيس الفحص الثاني', status: 'in_progress', notes: 'الفاحص يطالب بتحليل فواتير المشتريات ومطابقتها ببيانات منظومة الفواتير الإلكترونية.', created_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() },
   
   // Org 2 Seed Committee
-  { id: 'com-3', organization_id: 'org-2', client_id: 'cli-4', stage: 'فحص', subject: 'جلسة معاينة ساحات التخزين الجمركية', tax_authority: 'مأمورية ضرائب الإسكندرية أول', disputed_amount: 120000.00, tax_years: '2022-2024', hearing_date: new Date(Date.now() + 2 * 24 * 3600 * 1000).toISOString(), room_number: 'ساحة الشحن رقم 4', status: 'pending', notes: 'حضور الجلسة لإثبات توقف النشاط الموسمي المؤقت بساحات التخزين بميناء الدخيلة.', created_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() }
+  { id: 'com-3', organization_id: '22222222-2222-2222-2222-222222222222', client_id: 'cli-4', stage: 'فحص', subject: 'جلسة معاينة ساحات التخزين الجمركية', tax_authority: 'مأمورية ضرائب الإسكندرية أول', disputed_amount: 120000.00, tax_years: '2022-2024', hearing_date: new Date(Date.now() + 2 * 24 * 3600 * 1000).toISOString(), room_number: 'ساحة الشحن رقم 4', status: 'pending', notes: 'حضور الجلسة لإثبات توقف النشاط الموسمي المؤقت بساحات التخزين بميناء الدخيلة.', created_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() }
 ];
 
 const defaultTasks: Task[] = [
-  { id: 'tsk-1', organization_id: 'org-1', title: 'مراجعة الدفوع القانونية للجنة شركة النيل', description: 'التأكد من مطابقة أرقام الإهلاك الواردة بالمذكرة مع الدفاتر الحسابية المعتمدة.', due_date: new Date(Date.now() + 3 * 24 * 3600 * 1000).toISOString(), status: 'in_progress', priority: 'high', assigned_to: 'usr-cons', committee_id: 'com-1', created_at: new Date().toISOString() },
-  { id: 'tsk-2', organization_id: 'org-1', title: 'تجميع صور فواتير المبيعات الإلكترونية للمصرية للحلول', description: 'مطابقة الفواتير الورقية القديمة مع الفواتير المرفوعة على بورتال الضرائب للرد على استفسارات الفاحص.', due_date: new Date(Date.now() + 10 * 24 * 3600 * 1000).toISOString(), status: 'pending', priority: 'medium', assigned_to: 'usr-staff', committee_id: 'com-2', created_at: new Date().toISOString() }
+  { id: 'tsk-1', organization_id: '11111111-1111-1111-1111-111111111111', title: 'مراجعة الدفوع القانونية للجنة شركة النيل', description: 'التأكد من مطابقة أرقام الإهلاك الواردة بالمذكرة مع الدفاتر الحسابية المعتمدة.', due_date: new Date(Date.now() + 3 * 24 * 3600 * 1000).toISOString(), status: 'in_progress', priority: 'high', assigned_to: 'usr-cons', committee_id: 'com-1', created_at: new Date().toISOString() },
+  { id: 'tsk-2', organization_id: '11111111-1111-1111-1111-111111111111', title: 'تجميع صور فواتير المبيعات الإلكترونية للمصرية للحلول', description: 'مطابقة الفواتير الورقية القديمة مع الفواتير المرفوعة على بورتال الضرائب للرد على استفسارات الفاحص.', due_date: new Date(Date.now() + 10 * 24 * 3600 * 1000).toISOString(), status: 'pending', priority: 'medium', assigned_to: 'usr-staff', committee_id: 'com-2', created_at: new Date().toISOString() }
 ];
 
 const defaultAuditLogs: AuditLog[] = [
-  { id: 'log-1', organization_id: 'org-1', user_id: 'usr-admin', user_name: 'أ. سامح سمير', user_role: 'admin', action: 'إنشاء ملف عميل جديد', details: 'تم إضافة ملف العميل "الشركة العربية للاستثمار العقاري" بنجاح للمنظومة.', created_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() }
+  { id: 'log-1', organization_id: '11111111-1111-1111-1111-111111111111', user_id: 'usr-admin', user_name: 'أ. سامح سمير', user_role: 'admin', action: 'إنشاء ملف عميل جديد', details: 'تم إضافة ملف العميل "الشركة العربية للاستثمار العقاري" بنجاح للمنظومة.', created_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() }
 ];
 
 // Seeded Egyptian Tax Laws
@@ -178,10 +178,10 @@ export const mockDb = {
     const user = mockDb.getCurrentUser();
     // Default to user's own organization if they are not super_admin
     if (user.role !== 'super_admin') {
-      return user.organization_id || 'org-1';
+      return user.organization_id || '11111111-1111-1111-1111-111111111111';
     }
     // For super_admin, look up active selected org in storage
-    return getFromStorage<string>('ab_active_org_id', 'org-1');
+    return getFromStorage<string>('ab_active_org_id', '11111111-1111-1111-1111-111111111111');
   },
 
   setActiveOrgId: (orgId: string) => {
@@ -205,7 +205,6 @@ export const mockDb = {
   },
 
   getProfiles: (): Profile[] => {
-    // Merge defaultProfiles with any locally created mock profiles
     const defaultList = defaultProfiles;
     let profilesList = defaultList;
     if (isClient) {

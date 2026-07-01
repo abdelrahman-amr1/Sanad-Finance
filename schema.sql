@@ -1,8 +1,18 @@
 -- SQL Schema for Sanad Finance (Multi-Tenant SaaS Legal & Tax System)
 -- Execute this script in your Supabase SQL Editor.
+-- WARNING: This will drop existing tables and rebuild them with the new multi-tenant SaaS schema.
 
 -- Enable pgvector extension for AI semantic search RAG pipeline
 CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Drop existing tables to rebuild them fresh with multi-tenant columns
+DROP TABLE IF EXISTS public.audit_logs CASCADE;
+DROP TABLE IF EXISTS public.tasks CASCADE;
+DROP TABLE IF EXISTS public.committees CASCADE;
+DROP TABLE IF EXISTS public.clients CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+DROP TABLE IF EXISTS public.organizations CASCADE;
+DROP TABLE IF EXISTS public.tax_laws CASCADE;
 
 -- 1. Organizations Table (Tenants)
 CREATE TABLE IF NOT EXISTS public.organizations (
@@ -15,10 +25,6 @@ CREATE TABLE IF NOT EXISTS public.organizations (
 
 -- Enable RLS for Organizations
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
-
--- Safely drop old policies if they exist before recreation
-DROP POLICY IF EXISTS "Allow public read access to organizations" ON public.organizations;
-DROP POLICY IF EXISTS "Allow super_admins to manage organizations" ON public.organizations;
 
 CREATE POLICY "Allow public read access to organizations" ON public.organizations FOR SELECT USING (true);
 CREATE POLICY "Allow super_admins to manage organizations" ON public.organizations FOR ALL USING (
@@ -39,10 +45,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 -- Enable RLS for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow public read access to profiles" ON public.profiles;
-DROP POLICY IF EXISTS "Allow users to update their own profile" ON public.profiles;
-DROP POLICY IF EXISTS "Allow super_admins to manage profiles" ON public.profiles;
 
 -- Profiles Policies
 CREATE POLICY "Allow public read access to profiles" ON public.profiles FOR SELECT USING (true);
@@ -68,9 +70,6 @@ CREATE TABLE IF NOT EXISTS public.clients (
 
 -- Enable RLS for Clients (Tenant isolation)
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow users to read their own organization's clients" ON public.clients;
-DROP POLICY IF EXISTS "Allow admins/consultants to manage clients" ON public.clients;
 
 CREATE POLICY "Allow users to read their own organization's clients" ON public.clients FOR SELECT USING (
     organization_id = (SELECT organization_id FROM public.profiles WHERE profiles.id = auth.uid()) 
@@ -105,9 +104,6 @@ CREATE TABLE IF NOT EXISTS public.committees (
 -- Enable RLS for Committees (Tenant isolation)
 ALTER TABLE public.committees ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Allow users to read their own organization's committees" ON public.committees;
-DROP POLICY IF EXISTS "Allow admins/consultants to manage committees" ON public.committees;
-
 CREATE POLICY "Allow users to read their own organization's committees" ON public.committees FOR SELECT USING (
     organization_id = (SELECT organization_id FROM public.profiles WHERE profiles.id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'super_admin')
@@ -137,8 +133,6 @@ CREATE TABLE IF NOT EXISTS public.tasks (
 -- Enable RLS for Tasks (Tenant isolation)
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Allow users to manage tasks" ON public.tasks;
-
 CREATE POLICY "Allow users to manage tasks" ON public.tasks FOR ALL USING (
     organization_id = (SELECT organization_id FROM public.profiles WHERE profiles.id = auth.uid())
     OR EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'super_admin')
@@ -158,9 +152,6 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 
 -- Enable RLS for Audit Logs (Tenant isolation)
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow admins to read audit logs" ON public.audit_logs;
-DROP POLICY IF EXISTS "Allow insertion of audit logs for system operations" ON public.audit_logs;
 
 CREATE POLICY "Allow admins to read audit logs" ON public.audit_logs FOR SELECT USING (
     (organization_id = (SELECT organization_id FROM public.profiles WHERE profiles.id = auth.uid())
@@ -184,9 +175,6 @@ CREATE TABLE IF NOT EXISTS public.tax_laws (
 
 -- Enable RLS for Tax Laws (Read is global)
 ALTER TABLE public.tax_laws ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow authenticated read tax laws" ON public.tax_laws;
-DROP POLICY IF EXISTS "Allow super_admin to manage tax laws" ON public.tax_laws;
 
 CREATE POLICY "Allow authenticated read tax laws" ON public.tax_laws FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow super_admin to manage tax laws" ON public.tax_laws FOR ALL USING (

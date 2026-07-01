@@ -1,11 +1,17 @@
--- Seed Data for Sameh Samir - A&B Team (Smart Legal & Tax Advisory Management System)
+-- Seed Data for Sanad Finance (Multi-Tenant SaaS Legal & Tax System)
 -- Run this in your Supabase SQL Editor AFTER running schema.sql.
 
 -- Clear existing seedable data to avoid duplicates
 TRUNCATE TABLE public.tax_laws CASCADE;
 TRUNCATE TABLE public.clients CASCADE;
+TRUNCATE TABLE public.organizations CASCADE;
 
--- 1. Seed Real Egyptian Tax Law Articles
+-- 1. Seed Organizations
+INSERT INTO public.organizations (id, name, slug, status) VALUES
+('11111111-1111-1111-1111-111111111111', 'Sameh Samir - A&B team', 'sameh-samir-ab-team', 'active'),
+('22222222-2222-2222-2222-222222222222', 'مكتب النور للاستشارات والضرائب', 'al-nour-tax', 'active');
+
+-- 2. Seed Real Egyptian Tax Law Articles
 INSERT INTO public.tax_laws (law_number, law_year, law_type, article_number, content) VALUES
 ('91', '2005', 'ضريبة الدخل', '8', 
 'تُحدد أسعار الضريبة على دخل الأشخاص الطبيعيين على عدة شرائح تبدأ من الشريحة المعفاة البالغة 15,000 جنيه سنوياً (تم تعديلها لاحقاً بموجب القوانين المتعاقبة لتصل لـ 30,000 ثم 40,000 جنيه)، وتتدرج نسب الضريبة لتصل إلى 25% ثم 27.5% لأصحاب الدخول المرتفعة التي تفوق المليون جنيه سنوياً.'),
@@ -14,7 +20,7 @@ INSERT INTO public.tax_laws (law_number, law_year, law_type, article_number, con
 'يستحق مقابل تأخير على ما لا يتم أداؤه من الضريبة في موعدها القانوني. ويتم حساب مقابل التأخير على أساس سعر الائتمان والخصم المعلن من البنك المركزي المصري في الأول من يناير من كل عام مضافاً إليه 2%، مع استبعاد كسور الشهر والجنيه.'),
 
 ('67', '2016', 'ضريبة القيمة المضافة', '2', 
-'تفرض الضريبة على السلع والخدمات المحلية والمستوردة في كافة مراحل تداولها إلا ما استثني بنص خاص. ويُلتزم بتسجيل الموردين ومقدمي الخدمات لدى مصلحة الضرائب فور بلغ حجم مبيعاتهم حد التسجيل المقرر قانوناً وهو 500 ألف جنيه مصري.'),
+'تفرض الضريبة على السلع والخدمات المحلية والمستوردة in كافة مراحل تداولها إلا ما استثني بنص خاص. ويُلتزم بتسجيل الموردين ومقدمي الخدمات لدى مصلحة الضرائب فور بلغ حجم مبيعاتهم حد التسجيل المقرر قانوناً وهو 500 ألف جنيه مصري.'),
 
 ('67', '2016', 'ضريبة القيمة المضافة', '3', 
 'يكون السعر العام لضريبة القيمة المضافة هو 14% على جميع السلع والخدمات الخاضعة، باستثناء السلع والخدمات المعفاة الواردة في جدول الإعفاءات المرفق بالقانون (كالخدمات الصحية، التعليم، والخبز)، والسلع الخاضعة لضريبة الجدول بأسعار خاصة.'),
@@ -28,9 +34,12 @@ INSERT INTO public.tax_laws (law_number, law_year, law_type, article_number, con
 ('206', '2020', 'قانون الإجراءات الضريبية الموحد', '61', 
 'تتشكل لجان الطعن الضريبي بقرار من وزير المالية من رئيس من غير موظفي المصلحة وعضوية اثنين من خبراء الضرائب واثنين من موظفي المصلحة. وتصدر اللجنة قراراً مسبباً في حدود طلبات الممول، ويكون قرارها واجب النفاذ إدارياً.');
 
--- 2. Seed Realistic Client Companies
-INSERT INTO public.clients (name, tax_card_number, file_number, mobile, email, address, status) VALUES
-('شركة النيل للمقاولات والاستيراد', '123-456-789', 'م/1209/دخل', '01012345678', 'info@nile-contracting.com', '12 شارع التسعين، التجمع الخامس، القاهرة', 'active'),
-('المصرية للحلول البرمجية', '987-654-321', 'م/3490/مضافة', '01222446688', 'finance@egypt-software.com', 'المنطقة الحرة العامة، مدينة نصر، القاهرة', 'active'),
-('مصانع الأمل للصناعات الغذائية', '456-789-123', 'م/5567/دخل', '01144556677', 'tax@alamal-foods.com', 'المنطقة الصناعية السادسة، مدينة 6 أكتوبر', 'active'),
-('الشركة العربية للاستثمار العقاري', '321-987-654', 'م/8832/عقاري', '01511223344', 'investments@arabian-realestate.com', 'شارع الثورة، مصر الجديدة، القاهرة', 'active');
+-- 3. Seed Tenant Isolated Client Companies
+INSERT INTO public.clients (organization_id, name, tax_card_number, file_number, mobile, email, address, status) VALUES
+-- Clients for Sameh Samir - A&B team (organization_id = 11111111-1111-1111-1111-111111111111)
+('11111111-1111-1111-1111-111111111111', 'شركة النيل للمقاولات والاستيراد', '123-456-789', 'م/1209/دخل', '01012345678', 'info@nile-contracting.com', '12 شارع التسعين، التجمع الخامس، القاهرة', 'active'),
+('11111111-1111-1111-1111-111111111111', 'المصرية للحلول البرمجية', '987-654-321', 'م/3490/مضافة', '01222446688', 'finance@egypt-software.com', 'المنطقة الحرة العامة، مدينة نصر، القاهرة', 'active'),
+('11111111-1111-1111-1111-111111111111', 'مصانع الأمل للصناعات الغذائية', '456-789-123', 'م/5567/دخل', '01144556677', 'tax@alamal-foods.com', 'المنطقة الصناعية السادسة، مدينة 6 أكتوبر', 'active'),
+
+-- Clients for Al-Nour Tax Advisors (organization_id = 22222222-2222-2222-2222-222222222222)
+('22222222-2222-2222-2222-222222222222', 'مجموعة النور للشحن والتفريغ', '234-567-890', 'م/7091/دخل', '01009988776', 'accounting@al-nour.com', 'ميناء الدخيلة، الإسكندرية', 'active');

@@ -236,3 +236,35 @@ BEGIN
     LIMIT match_count;
 END;
 $$;
+
+-- =========================================================================
+-- 6. AUTOMATIC USER PROFILE CREATION TRIGGER
+-- =========================================================================
+-- This trigger function automatically creates a profile record in the public.profiles
+-- table whenever a new user is created in the auth.users table (via Auth API or Dashboard).
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+    INSERT INTO public.profiles (id, name, email, role, organization_id, avatar_url)
+    VALUES (
+        new.id,
+        coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
+        new.email,
+        coalesce(new.raw_user_meta_data->>'role', 'staff'),
+        CASE 
+            WHEN (new.raw_user_meta_data->>'organization_id') IS NOT NULL AND (new.raw_user_meta_data->>'organization_id') <> ''
+            THEN (new.raw_user_meta_data->>'organization_id')::uuid
+            ELSE NULL
+        END,
+        coalesce(new.raw_user_meta_data->>'avatar_url', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces')
+    );
+    RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to link auth.users to public.profiles
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+

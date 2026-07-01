@@ -170,7 +170,7 @@ export default function WorkspaceLayout({
         {/* Content Body */}
         <main className="flex-1 p-6 bg-[#F8FAFC] overflow-y-auto">
           {/* Global warning banner if in Mock Mode */}
-          {(!isSupabaseConfigured || !isRealAiActive) && (
+          {!isSupabaseConfigured && (
             <div className="mb-6 bg-amber-50 border-r-4 border-amber-500 p-4 rounded-l-lg shadow-sm flex items-center justify-between no-print animate-pulse">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />

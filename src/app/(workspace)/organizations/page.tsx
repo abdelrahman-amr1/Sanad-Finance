@@ -9,8 +9,7 @@ import {
   Globe, 
   MapPin, 
   Phone, 
-  Info,
-  Activity
+  Edit3
 } from 'lucide-react';
 import { db, Profile, Organization } from '@/lib/supabase';
 import confetti from 'canvas-confetti';
@@ -20,8 +19,11 @@ export default function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Form State
+  // Modal Mode (creation vs editing)
+  const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Form State
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [address, setAddress] = useState('');
@@ -47,7 +49,29 @@ export default function OrganizationsPage() {
     }
   };
 
-  const handleCreateOrg = async (e: React.FormEvent) => {
+  const handleOpenCreateModal = () => {
+    setEditingOrg(null);
+    setName('');
+    setSlug('');
+    setAddress('');
+    setPhone('');
+    setDescription('');
+    setFormError('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (org: Organization) => {
+    setEditingOrg(org);
+    setName(org.name);
+    setSlug(org.slug);
+    setAddress(org.address || '');
+    setPhone(org.phone || '');
+    setDescription(org.description || '');
+    setFormError('');
+    setIsModalOpen(true);
+  };
+
+  const handleCreateOrUpdateOrg = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !slug) {
       setFormError('يرجى إدخال اسم المكتب والعنوان الفرعي');
@@ -64,13 +88,25 @@ export default function OrganizationsPage() {
     setFormError('');
 
     try {
-      await db.addOrganization({ 
-        name, 
-        slug, 
-        address: address || undefined, 
-        phone: phone || undefined, 
-        description: description || undefined 
-      });
+      if (editingOrg) {
+        // Edit Mode
+        await db.updateOrganization(editingOrg.id, {
+          name,
+          slug,
+          address: address || undefined,
+          phone: phone || undefined,
+          description: description || undefined
+        });
+      } else {
+        // Create Mode
+        await db.addOrganization({ 
+          name, 
+          slug, 
+          address: address || undefined, 
+          phone: phone || undefined, 
+          description: description || undefined 
+        });
+      }
       
       // Trigger confetti
       confetti({
@@ -85,11 +121,12 @@ export default function OrganizationsPage() {
       setAddress('');
       setPhone('');
       setDescription('');
+      setEditingOrg(null);
       
       // Refresh list
       await fetchOrganizations();
     } catch (err: any) {
-      setFormError(err.message || 'فشل إضافة المنصة الجديدة');
+      setFormError(err.message || 'فشل حفظ بيانات المنصة');
     } finally {
       setFormLoading(false);
     }
@@ -120,11 +157,11 @@ export default function OrganizationsPage() {
             إدارة المكاتب والمنصات التابعة (Sanad Finance SaaS)
           </h2>
           <p className="text-slate-500 text-xs mt-1">
-            بوابة الإشراف العام لـ أ. عبد الرحمن عمرو لإضافة مكاتب الاستشارات القانونية وتحديد روابطها الفرعية وتفاصيلها.
+            بوابة الإشراف العام لـ أ. عبد الرحمن عمرو لإضافة وتحديث بيانات المكاتب الاستشارية وتفاصيلها.
           </p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className="flex items-center gap-2 px-4 py-2 bg-brand-navy text-white rounded-lg text-xs font-bold hover:bg-brand-navy-light transition-all shadow-md animate-pulse hover:animate-none"
         >
           <Plus className="w-4 h-4 text-brand-gold" />
@@ -152,11 +189,20 @@ export default function OrganizationsPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-extrabold text-slate-900">{org.name}</h3>
-                  <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-bold ${
-                    org.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' : 'bg-red-50 text-red-700 border border-red-150'
-                  }`}>
-                    {org.status === 'active' ? 'نشط' : 'معطل'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleOpenEditModal(org)}
+                      className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 px-2 py-1 rounded"
+                    >
+                      <Edit3 className="w-3 h-3 text-slate-400" />
+                      تعديل
+                    </button>
+                    <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-bold ${
+                      org.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' : 'bg-red-50 text-red-700 border border-red-150'
+                    }`}>
+                      {org.status === 'active' ? 'نشط' : 'معطل'}
+                    </span>
+                  </div>
                 </div>
                 
                 {/* Domain Link */}
@@ -213,12 +259,14 @@ export default function OrganizationsPage() {
         </div>
       )}
 
-      {/* Modal for adding New Organization */}
+      {/* Modal for adding/editing Organization */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md animate-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-slate-150 flex justify-between items-center">
-              <h3 className="text-sm font-extrabold text-slate-900">تسجيل مكتب/منصة جديدة</h3>
+              <h3 className="text-sm font-extrabold text-slate-900">
+                {editingOrg ? 'تعديل بيانات المكتب الاستشاري' : 'تسجيل مكتب/منصة جديدة'}
+              </h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
                 className="text-slate-400 hover:text-slate-900 text-xs font-bold"
@@ -227,7 +275,7 @@ export default function OrganizationsPage() {
               </button>
             </div>
             
-            <form onSubmit={handleCreateOrg} className="p-5 space-y-4 text-xs">
+            <form onSubmit={handleCreateOrUpdateOrg} className="p-5 space-y-4 text-xs">
               {formError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 p-2.5 rounded text-[11px]">
                   {formError}
@@ -259,7 +307,7 @@ export default function OrganizationsPage() {
                   />
                 </div>
                 <span className="text-[10px] text-slate-400 mt-1 block leading-relaxed">
-                  سيتم حجز النطاق الفرعي للمكتب بناءً على هذا المسمى ليصبح:
+                  النطاق الفرعي المحجوز للمكتب:
                   <code className="bg-slate-50 px-1 py-0.5 border rounded text-brand-navy font-mono text-[9px] block mt-1">
                     {slug || 'alamal-tax'}-sanadfinance.vercel.app
                   </code>
@@ -304,7 +352,7 @@ export default function OrganizationsPage() {
                 disabled={formLoading}
                 className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-bold text-slate-950 bg-brand-gold hover:bg-brand-gold-hover transition-all shadow-md disabled:opacity-50"
               >
-                {formLoading ? 'جاري تهيئة المنصة سحابياً...' : 'تهيئة وحجز النطاق للمنصة'}
+                {formLoading ? 'جاري الحفظ سحابياً...' : 'حفظ التغييرات'}
               </button>
             </form>
           </div>

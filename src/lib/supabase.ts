@@ -14,11 +14,11 @@ export const supabase = isSupabaseConfigured
 // Combined Unified Database API
 export const db = {
   // Authentication & RBAC User Simulation
-  getCurrentUser: (): Profile => {
+  getCurrentUser: (): Profile | null => {
     return mockDb.getCurrentUser();
   },
 
-  setCurrentUser: (profile: Profile) => {
+  setCurrentUser: (profile: Profile | null) => {
     mockDb.setCurrentUser(profile);
   },
 
@@ -56,6 +56,24 @@ export const db = {
       return data;
     }
     return mockDb.addOrganization(org);
+  },
+
+  updateOrganization: async (id: string, updatedData: Partial<Organization>): Promise<Organization> => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('organizations')
+        .update(updatedData)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase updateOrganization error, falling back to mock:', error);
+        return mockDb.updateOrganization(id, updatedData);
+      }
+      await db.addAuditLog('تحديث بيانات المنصة (Supabase)', `تم تعديل بيانات المنصة: ${data.name}`);
+      return data;
+    }
+    return mockDb.updateOrganization(id, updatedData);
   },
 
   getActiveOrgId: (): string => {
@@ -151,7 +169,7 @@ export const db = {
       const currentUser = db.getCurrentUser();
       const { data, error } = await supabase
         .from('committees')
-        .insert([{ ...committee, organization_id: activeOrgId, status: 'pending', created_by: currentUser.id }])
+        .insert([{ ...committee, organization_id: activeOrgId, status: 'pending', created_by: currentUser ? currentUser.id : null }])
         .select()
         .single();
       if (error) {
@@ -291,9 +309,9 @@ export const db = {
         .from('audit_logs')
         .insert([{
           organization_id: activeOrgId,
-          user_id: currentUser.id,
-          user_name: currentUser.name,
-          user_role: currentUser.role,
+          user_id: currentUser ? currentUser.id : null,
+          user_name: currentUser ? currentUser.name : 'النظام',
+          user_role: currentUser ? currentUser.role : 'system',
           action,
           details
         }])

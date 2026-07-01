@@ -167,7 +167,10 @@ const getFromStorage = <T>(key: string, defaultValue: T): T => {
   }
   
   if (!stored) {
-    localStorage.setItem(key, JSON.stringify(defaultValue));
+    // DO NOT save default null to localStorage to avoid permanent empty values
+    if (defaultValue !== null) {
+      localStorage.setItem(key, JSON.stringify(defaultValue));
+    }
     return defaultValue;
   }
   try {
@@ -229,6 +232,16 @@ export const mockDb = {
     return newOrg;
   },
 
+  updateOrganization: (id: string, updatedData: Partial<Organization>): Organization => {
+    const orgs = mockDb.getOrganizations();
+    const idx = orgs.findIndex(o => o.id === id);
+    if (idx === -1) throw new Error('Organization not found');
+    orgs[idx] = { ...orgs[idx], ...updatedData };
+    saveToStorage('ab_organizations', orgs);
+    mockDb.addAuditLog('تحديث بيانات المنصة (محاكاة)', `تم تعديل بيانات المنصة: ${orgs[idx].name}`);
+    return orgs[idx];
+  },
+
   // Active Tenant Context (for Super Admin & Subdomain lock)
   getActiveOrgId: (): string => {
     // 1. If we are on a specific subdomain/custom domain, force the corresponding organization
@@ -239,8 +252,8 @@ export const mockDb = {
 
     // 2. Otherwise fall back to user profile role or switcher settings
     const user = mockDb.getCurrentUser();
-    if (user.role !== 'super_admin') {
-      return user.organization_id || '11111111-1111-1111-1111-111111111111';
+    if (!user || user.role !== 'super_admin') {
+      return (user && user.organization_id) || '11111111-1111-1111-1111-111111111111';
     }
     return getFromStorage<string>('ab_active_org_id', '11111111-1111-1111-1111-111111111111');
   },
@@ -250,19 +263,24 @@ export const mockDb = {
     mockDb.addAuditLog('تغيير المنصة النشطة (سوبر أدمن)', `تم الانتقال لاستعراض بيانات الشركة معرف: ${orgId}`);
   },
 
-  // Users
-  getCurrentUser: (): Profile => {
-    const defaultUser = defaultProfiles[0]; // Super Admin (Abdelrahman Amr) by default
-    return getFromStorage<Profile>('ab_current_user', defaultUser);
+  // Users - Modified to default to null for proper simulated login
+  getCurrentUser: (): Profile | null => {
+    return getFromStorage<Profile | null>('ab_current_user', null);
   },
 
-  setCurrentUser: (profile: Profile) => {
-    saveToStorage<Profile>('ab_current_user', profile);
-    // If user has organization_id, set it as active org
-    if (profile.organization_id) {
-      saveToStorage('ab_active_org_id', profile.organization_id);
+  setCurrentUser: (profile: Profile | null) => {
+    if (profile === null) {
+      if (isClient) {
+        localStorage.removeItem('ab_current_user');
+      }
+    } else {
+      saveToStorage<Profile>('ab_current_user', profile);
+      // If user has organization_id, set it as active org
+      if (profile.organization_id) {
+        saveToStorage('ab_active_org_id', profile.organization_id);
+      }
+      mockDb.addAuditLog('تغيير المستخدم الفعال (محاكاة)', `تم تسجيل دخول ${profile.name} (${profile.role})`);
     }
-    mockDb.addAuditLog('تغيير المستخدم الفعال (محاكاة)', `تم تسجيل دخول ${profile.name} (${profile.role})`);
   },
 
   getProfiles: (): Profile[] => {
@@ -443,9 +461,9 @@ export const mockDb = {
     const newLog: AuditLog = {
       id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       organization_id: activeOrgId,
-      user_id: currentUser.id,
-      user_name: currentUser.name,
-      user_role: currentUser.role,
+      user_id: currentUser ? currentUser.id : 'system',
+      user_name: currentUser ? currentUser.name : 'النظام',
+      user_role: currentUser ? currentUser.role : 'system',
       action,
       details,
       created_at: new Date().toISOString()

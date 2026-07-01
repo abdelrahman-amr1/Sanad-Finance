@@ -14,7 +14,8 @@ import {
   UserCheck, 
   ChevronDown,
   RefreshCw,
-  Building2
+  Building2,
+  LogOut
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { db, Profile } from '@/lib/supabase';
@@ -25,6 +26,14 @@ export const Sidebar: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+
+  const handleLogout = () => {
+    db.setCurrentUser(null);
+    router.push('/');
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+  };
 
   useEffect(() => {
     setCurrentUser(db.getCurrentUser());
@@ -129,13 +138,23 @@ export const Sidebar: React.FC = () => {
             <Shield className="w-3 h-3 text-brand-gold" />
             محاكاة صلاحية المستخدم
           </span>
-          <button 
-            onClick={() => db.resetMockDb()}
-            title="إعادة تهيئة البيانات الافتراضية"
-            className="text-slate-400 hover:text-white transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => db.resetMockDb()}
+              title="إعادة تهيئة البيانات الافتراضية"
+              className="text-slate-400 hover:text-white transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+            <button 
+              onClick={handleLogout}
+              title="تسجيل الخروج"
+              className="text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1 text-[10px] font-bold"
+            >
+              <LogOut className="w-3 h-3 text-red-500" />
+              <span>خروج</span>
+            </button>
+          </div>
         </div>
 
         {/* Active User Card with Switcher Toggle */}

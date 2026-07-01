@@ -208,14 +208,14 @@ export default function OrganizationsPage() {
                 {/* Domain Link */}
                 <div className="flex items-center gap-1.5 text-slate-500 font-medium text-[11px]">
                   <Globe className="w-3.5 h-3.5 text-brand-gold" />
-                  <span className="font-bold text-slate-700">النطاق السحابي:</span>
+                  <span className="font-bold text-slate-700">رابط المنصة المباشر:</span>
                   <a 
-                    href={`https://${org.slug}-sanadfinance.vercel.app`}
+                    href={`/lawyers/${org.slug}`}
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="font-mono text-brand-navy hover:underline text-[10px]"
                   >
-                    {org.slug}-sanadfinance.vercel.app
+                    sanadfinance.vercel.app/lawyers/{org.slug}
                   </a>
                 </div>
 
@@ -307,9 +307,9 @@ export default function OrganizationsPage() {
                   />
                 </div>
                 <span className="text-[10px] text-slate-400 mt-1 block leading-relaxed">
-                  النطاق الفرعي المحجوز للمكتب:
+                  رابط المنصة المباشر للمكتب:
                   <code className="bg-slate-50 px-1 py-0.5 border rounded text-brand-navy font-mono text-[9px] block mt-1">
-                    {slug || 'alamal-tax'}-sanadfinance.vercel.app
+                    sanadfinance.vercel.app/lawyers/{slug || 'alamal-tax'}
                   </code>
                 </span>
               </div>

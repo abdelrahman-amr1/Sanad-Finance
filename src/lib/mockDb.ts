@@ -112,7 +112,7 @@ const defaultOrganizations: Organization[] = [
 
 const defaultProfiles: Profile[] = [
   // Super Admin updated to Abdelrahman Amr
-  { id: 'usr-super', name: 'أ. عبد الرحمن عمرو', email: 'abdelrahman@sanadfinance.com', role: 'super_admin', avatar_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=faces' },
+  { id: 'usr-super', name: 'أ. عبد الرحمن عمرو', email: 'abdelrahman@sanad.ai', role: 'super_admin', avatar_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=faces' },
   // Sameh Samir - A&B team profiles
   { id: 'usr-admin', name: 'أ. سامح سمير', email: 'admin@abteam.com', role: 'admin', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=faces' },
   { id: 'usr-cons', name: 'مستشار أحمد رأفت', email: 'consultant@abteam.com', role: 'consultant', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=faces' },

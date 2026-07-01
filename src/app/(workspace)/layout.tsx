@@ -69,7 +69,7 @@ export default function WorkspaceLayout({
       db.getOrganizations().then(orgs => {
         const match = orgs.find(o => o.id === activeId);
         if (match) {
-          document.title = `سند للتمويل | ${match.name}`;
+          document.title = `سند | ${match.name}`;
         }
       }).catch(err => console.error(err));
     }
@@ -110,7 +110,7 @@ export default function WorkspaceLayout({
             <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               أهلاً بك، {currentUser.name}
               <span className="text-xs font-normal text-slate-400">
-                | دورك الحالي: {currentUser.role === 'super_admin' ? 'سوبر أدمن (Sanad Finance)' : currentUser.role === 'admin' ? 'مدير النظام' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
+                | دورك الحالي: {currentUser.role === 'super_admin' ? 'سوبر أدمن (سند)' : currentUser.role === 'admin' ? 'مدير المكتب' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
               </span>
             </h1>
           </div>

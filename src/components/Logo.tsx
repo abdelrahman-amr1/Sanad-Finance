@@ -88,13 +88,13 @@ export const Logo: React.FC<LogoProps> = ({ className = '', showText = true, dar
       {/* Brand Text */}
       {showText && (
         <div className="flex flex-col">
-          <span className={`text-base font-extrabold tracking-wide ${dark ? 'text-white' : 'text-slate-900'}`}>
-            Sameh Samir
+          <span className={`text-lg font-black tracking-wide ${dark ? 'text-white' : 'text-slate-900'}`}>
+            سَنَد
           </span>
-          <span className={`text-xs font-semibold tracking-wider flex items-center gap-1.5 ${dark ? 'text-brand-gold' : 'text-slate-600'}`}>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-egypt-red" />
-            A&B team
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-egypt-black" />
+          <span className={`text-[10px] font-bold tracking-wider flex items-center gap-1 ${dark ? 'text-brand-gold' : 'text-slate-600'}`}>
+            <span className="inline-block w-1 h-1 rounded-full bg-egypt-red" />
+            للمحاسبة والاستشارات
+            <span className="inline-block w-1 h-1 rounded-full bg-egypt-black" />
           </span>
         </div>
       )}

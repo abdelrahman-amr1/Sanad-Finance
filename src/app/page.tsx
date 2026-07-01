@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [resolvingTenant, setResolvingTenant] = useState(true);
   const [isTenantMode, setIsTenantMode] = useState(false);
-  const [tenantName, setTenantName] = useState('سند للتمويل (Sanad Finance)');
+  const [tenantName, setTenantName] = useState('سند (Sanad) | المنصة الذكية لإدارة مكاتب المحاسبة والاستشارات');
 
   useEffect(() => {
     const resolveTenant = async () => {
@@ -85,7 +85,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (tenantName) {
-      document.title = `سند للتمويل | ${tenantName}`;
+      document.title = `سند | ${tenantName}`;
     }
   }, [tenantName]);
 
@@ -286,7 +286,7 @@ export default function LoginPage() {
                 }}
                 className="text-[11px] font-bold text-brand-gold hover:underline flex items-center justify-center gap-1 mx-auto"
               >
-                « العودة لمنصة سند الرئيسية (سوبر أدمن)
+                « العودة لمنصة سند الرئيسية
               </button>
             </div>
           )}

@@ -1,26 +1,71 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F8FAFC;
+  --foreground: #0F172A;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Base custom styles */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-cairo), system-ui, -apple-system, sans-serif;
+  direction: rtl;
+  text-align: right;
+  overflow-x: hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Custom class colors (if direct mapping fallback is needed) */
+.bg-slate-850 {
+  background-color: #1E293B;
+}
+.border-slate-850 {
+  border-color: #1E293B;
+}
+
+/* Beautiful print styles for professional legal reports */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+    direction: rtl;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-page-break {
+    page-break-before: always;
+  }
+  .print-card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Micro-animations and effects */
+.hover-gold-glow {
+  transition: all 0.3s ease;
+}
+.hover-gold-glow:hover {
+  box-shadow: 0 0 15px rgba(197, 168, 128, 0.4);
+  border-color: #C5A880;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(197, 168, 128, 0.3);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(197, 168, 128, 0.6);
 }

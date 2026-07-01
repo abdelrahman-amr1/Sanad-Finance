@@ -68,6 +68,12 @@ export const Sidebar: React.FC = () => {
       href: '/reports',
       icon: Printer,
       roles: ['admin', 'consultant']
+    },
+    {
+      name: 'إدارة المستخدمين',
+      href: '/users',
+      icon: Users,
+      roles: ['admin']
     }
   ];
 

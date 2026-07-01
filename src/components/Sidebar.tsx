@@ -175,7 +175,7 @@ export const Sidebar: React.FC = () => {
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-white truncate">{currentUser.name}</p>
               <p className="text-[10px] text-slate-400 truncate">
-                {currentUser.role === 'admin' ? 'مدير النظام' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
+                {currentUser.role === 'super_admin' ? 'المدير العام (سوبر أدمن)' : currentUser.role === 'admin' ? 'مدير المكتب' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
               </p>
             </div>
             
@@ -205,7 +205,7 @@ export const Sidebar: React.FC = () => {
                       <div className="flex-1">
                         <div className="font-semibold">{p.name}</div>
                         <div className="text-[10px] opacity-70">
-                          {p.role === 'admin' ? 'مدير' : p.role === 'consultant' ? 'مستشار' : 'موظف'}
+                          {p.role === 'super_admin' ? 'سوبر أدمن' : p.role === 'admin' ? 'مدير مكتب' : p.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
                         </div>
                       </div>
                     </button>

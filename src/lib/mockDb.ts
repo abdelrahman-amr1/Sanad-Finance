@@ -113,9 +113,14 @@ const defaultOrganizations: Organization[] = [
 const defaultProfiles: Profile[] = [
   // Super Admin updated to Abdelrahman Amr
   { id: 'usr-super', name: 'أ. عبد الرحمن عمرو', email: 'abdelrahman@sanadfinance.com', role: 'super_admin', avatar_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=faces' },
+  // Sameh Samir - A&B team profiles
   { id: 'usr-admin', name: 'أ. سامح سمير', email: 'admin@abteam.com', role: 'admin', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=faces' },
   { id: 'usr-cons', name: 'مستشار أحمد رأفت', email: 'consultant@abteam.com', role: 'consultant', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=faces' },
-  { id: 'usr-staff', name: 'مهى علي', email: 'staff@abteam.com', role: 'staff', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces' }
+  { id: 'usr-staff', name: 'مهى علي', email: 'staff@abteam.com', role: 'staff', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces' },
+  // Al-Nour Office profiles
+  { id: 'usr-admin-nour', name: 'أ. محمد عبد الله', email: 'admin@alnour.com', role: 'admin', organization_id: '22222222-2222-2222-2222-222222222222', avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces' },
+  { id: 'usr-cons-nour', name: 'مستشار خالد منصور', email: 'consultant@alnour.com', role: 'consultant', organization_id: '22222222-2222-2222-2222-222222222222', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces' },
+  { id: 'usr-staff-nour', name: 'أ. سارة أحمد', email: 'staff@alnour.com', role: 'staff', organization_id: '22222222-2222-2222-2222-222222222222', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces' }
 ];
 
 const defaultClients: Client[] = [
@@ -339,8 +344,8 @@ export const mockDb = {
     let profilesList = defaultList;
     if (isClient) {
       const stored = localStorage.getItem('ab_mock_profiles');
-      // Auto-healing profiles list if it has old super admin
-      if (stored && stored.includes('خالد سند')) {
+      // Auto-healing profiles list if it has old super admin or is missing Al-Nour profiles
+      if (stored && (stored.includes('خالد سند') || !stored.includes('usr-admin-nour'))) {
         localStorage.removeItem('ab_mock_profiles');
         localStorage.setItem('ab_mock_profiles', JSON.stringify(defaultList));
         profilesList = defaultList;
@@ -352,7 +357,10 @@ export const mockDb = {
         localStorage.setItem('ab_mock_profiles', JSON.stringify(defaultList));
       }
     }
-    return profilesList;
+    
+    // Filter profiles by activeOrgId to isolate tenants (Super Admin is always visible)
+    const activeOrgId = mockDb.getActiveOrgId();
+    return profilesList.filter(p => p.role === 'super_admin' || p.organization_id === activeOrgId);
   },
 
   // Clients (Filtered by active tenant)

@@ -13,7 +13,7 @@ import {
   Key,
   Users
 } from 'lucide-react';
-import { db, Profile } from '@/lib/supabase';
+import { db, Profile, isSupabaseConfigured } from '@/lib/supabase';
 import confetti from 'canvas-confetti';
 
 export default function UsersPage() {
@@ -38,10 +38,24 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/users');
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
+      if (isSupabaseConfigured) {
+        const response = await fetch('/api/admin/users');
+        if (response.ok) {
+          const data = await response.json();
+          // Filter by active organization
+          const activeOrgId = db.getActiveOrgId();
+          const user = db.getCurrentUser();
+          let list = data.users || [];
+          if (user && user.role !== 'super_admin') {
+            list = list.filter((u: any) => u.organization_id === user.organization_id);
+          } else if (activeOrgId) {
+            list = list.filter((u: any) => u.role === 'super_admin' || u.organization_id === activeOrgId);
+          }
+          setUsers(list);
+        }
+      } else {
+        // Direct local mock db read (properly isolated by activeOrgId)
+        setUsers(db.getProfiles());
       }
     } catch (e) {
       console.error('Failed to fetch users:', e);
@@ -61,22 +75,64 @@ export default function UsersPage() {
     setFormError('');
 
     try {
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email, 
-          name, 
-          role, 
-          organizationId: currentUser?.organization_id, // Link to the same tenant company
-          password 
-        })
-      });
+      const activeOrgId = db.getActiveOrgId();
+      const targetOrgId = currentUser?.role === 'super_admin' ? activeOrgId : currentUser?.organization_id;
 
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Trigger confetti
+      if (isSupabaseConfigured) {
+        const response = await fetch('/api/admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email, 
+            name, 
+            role, 
+            organizationId: targetOrgId, // Link to correct organization
+            password 
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          confetti({
+            particleCount: 50,
+            spread: 45,
+            colors: ['#CE1126', '#C5A880', '#0F172A']
+          });
+          
+          setIsModalOpen(false);
+          setName('');
+          setEmail('');
+          setRole('staff');
+          setPassword('ABTeam2026!');
+          await fetchUsers();
+        } else {
+          setFormError(data.error || 'فشل إنشاء الحساب');
+        }
+      } else {
+        // Direct local mock db creation
+        let list: Profile[] = [];
+        const stored = localStorage.getItem('ab_mock_profiles');
+        if (stored) {
+          list = JSON.parse(stored);
+        } else {
+          // Fallback to defaultProfiles from db
+          list = [...db.getProfiles()];
+        }
+        
+        const newProfile: Profile = {
+          id: `usr-${Date.now()}`,
+          name,
+          email,
+          role,
+          organization_id: targetOrgId || undefined,
+          avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces`
+        };
+        
+        list.push(newProfile);
+        localStorage.setItem('ab_mock_profiles', JSON.stringify(list));
+        db.addAuditLog('إنشاء حساب مستخدم جديد (محاكاة)', `تم تسجيل الحساب: ${name} بدوره: ${role}`);
+        
         confetti({
           particleCount: 50,
           spread: 45,
@@ -84,16 +140,11 @@ export default function UsersPage() {
         });
         
         setIsModalOpen(false);
-        // Reset form
         setName('');
         setEmail('');
         setRole('staff');
         setPassword('ABTeam2026!');
-        
-        // Refresh users list
         await fetchUsers();
-      } else {
-        setFormError(data.error || 'فشل إنشاء الحساب');
       }
     } catch (err: any) {
       setFormError(err.message || 'حدث خطأ غير متوقع');
@@ -110,15 +161,30 @@ export default function UsersPage() {
 
     if (confirm('هل أنت متأكد من رغبتك في حذف هذا الحساب نهائياً؟ سيتم إلغاء صلاحية دخوله وسجله في الحال.')) {
       try {
-        const response = await fetch(`/api/admin/users?id=${id}`, {
-          method: 'DELETE'
-        });
+        if (isSupabaseConfigured) {
+          const response = await fetch(`/api/admin/users?id=${id}`, {
+            method: 'DELETE'
+          });
 
-        if (response.ok) {
-          await fetchUsers();
+          if (response.ok) {
+            await fetchUsers();
+          } else {
+            const data = await response.json();
+            alert(data.error || 'فشل حذف الحساب');
+          }
         } else {
-          const data = await response.json();
-          alert(data.error || 'فشل حذف الحساب');
+          // Local mock deletion
+          let rawList: Profile[] = [];
+          const stored = localStorage.getItem('ab_mock_profiles');
+          if (stored) {
+            rawList = JSON.parse(stored);
+          } else {
+            rawList = db.getProfiles(); 
+          }
+          const filtered = rawList.filter(p => p.id !== id);
+          localStorage.setItem('ab_mock_profiles', JSON.stringify(filtered));
+          db.addAuditLog('حذف حساب مستخدم (محاكاة)', `حذف المعرف: ${id}`);
+          await fetchUsers();
         }
       } catch (err) {
         console.error('Failed to delete user:', err);
@@ -126,15 +192,15 @@ export default function UsersPage() {
     }
   };
 
-  // RBAC Access Restriction: Only Admin can access
-  if (currentUser && currentUser.role !== 'admin') {
+  // RBAC Access Restriction: Only Admin and Super Admin can access
+  if (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'super_admin') {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-12 text-center max-w-lg mx-auto shadow-sm space-y-4" dir="rtl">
         <ShieldAlert className="w-16 h-16 text-red-650 mx-auto animate-bounce" />
         <h3 className="text-lg font-extrabold text-slate-800">قسم مغلق وصلاحيات غير كافية</h3>
         <p className="text-xs text-slate-550 leading-relaxed font-medium">
-          عذراً، تقتصر صلاحية إنشاء المستخدمين وإدارة الصلاحيات (RBAC) بالكامل على المدير العام للنظام.
-          يرجى التبديل لدور **(أ. سامح سمير)** من محاكي الصلاحيات أسفل القائمة الجانبية لتصفح هذا القسم.
+          عذراً، تقتصر صلاحية إنشاء المستخدمين وإدارة الصلاحيات (RBAC) بالكامل على المدير العام للمكتب أو مدير النظام.
+          يرجى التبديل لدور **(أ. سامح سمير)** أو **(أ. عبد الرحمن عمرو)** من محاكي الصلاحيات أسفل القائمة الجانبية لتصفح هذا القسم.
         </p>
       </div>
     );
@@ -142,6 +208,8 @@ export default function UsersPage() {
 
   const getRoleBadge = (r: Profile['role']) => {
     switch (r) {
+      case 'super_admin':
+        return 'bg-brand-navy text-brand-gold border-brand-gold/30';
       case 'admin':
         return 'bg-slate-900 text-white border-slate-900';
       case 'consultant':
@@ -152,7 +220,8 @@ export default function UsersPage() {
   };
 
   const getRoleName = (r: Profile['role']) => {
-    if (r === 'admin') return 'مدير عام';
+    if (r === 'super_admin') return 'سوبر أدمن';
+    if (r === 'admin') return 'مدير مكتب';
     if (r === 'consultant') return 'مستشار ضريبي';
     return 'موظف إداري';
   };
@@ -183,7 +252,7 @@ export default function UsersPage() {
         {loading ? (
           <div className="p-12 text-center space-y-3">
             <div className="w-8 h-8 border-4 border-slate-100 border-t-brand-gold rounded-full animate-spin mx-auto"></div>
-            <p className="text-xs text-slate-500 font-semibold">جاري جلب حسابات المستخدمين...</p>
+            <p className="text-xs text-slate-550 font-semibold">جاري جلب حسابات المستخدمين...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -222,7 +291,7 @@ export default function UsersPage() {
                         onClick={() => handleDeleteUser(u.id)}
                         disabled={u.id === currentUser?.id}
                         className="text-slate-400 hover:text-red-650 transition-colors disabled:opacity-30 disabled:hover:text-slate-450"
-                        title={u.id === currentUser?.id ? 'لا يمكنك حذف حسابك الحالي' : 'حذف هذا المستخدم'}
+                        title={u.id === currentUser?.id ? 'لا يمكنك حذف حسابك الحالي النشط' : 'حذف هذا المستخدم'}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -258,67 +327,51 @@ export default function UsersPage() {
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">اسم الموظف الكامل*</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                    <User className="w-4 h-4" />
-                  </span>
-                  <input 
-                    type="text" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="مثال: أ. محمد أحمد"
-                    className="w-full border border-slate-200 pr-9 pl-3 py-2 rounded-lg text-xs"
-                    required
-                  />
-                </div>
+                <input 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="مثال: أ. محمد عبد الله"
+                  className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs"
+                  required
+                />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">البريد الإلكتروني للعمل*</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                    <Mail className="w-4 h-4" />
-                  </span>
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="example@abteam.com"
-                    className="w-full border border-slate-200 pr-9 pl-3 py-2 rounded-lg text-xs text-left font-mono"
-                    required
-                  />
-                </div>
+                <label className="font-bold text-slate-700 block mb-1">البريد الإلكتروني*</label>
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@alnour.com"
+                  className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-mono text-left"
+                  required
+                />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">صلاحية المستخدم (الدور)*</label>
+                <label className="font-bold text-slate-700 block mb-1">كلمة مرور الحساب الافتراضية*</label>
+                <input 
+                  type="text" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-mono text-left"
+                  required
+                />
+                <span className="text-[10px] text-slate-400 mt-1 block">يمكن للموظف تغييرها لاحقاً عند أول تسجيل دخول.</span>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">نوع الترخيص وصلاحية الدور*</label>
                 <select 
                   value={role}
-                  onChange={(e: any) => setRole(e.target.value)}
-                  className="w-full border border-slate-200 p-2 rounded-lg text-xs font-bold"
+                  onChange={(e) => setRole(e.target.value as any)}
+                  className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs"
                 >
-                  <option value="staff">موظف إداري (عرض التقويم والمهام)</option>
-                  <option value="consultant">مستشار ضريبي (قراءة وتعديل الملفات وصياغة الطعون)</option>
-                  <option value="admin">مدير عام للنظام (صلاحيات كاملة + إدارة المستخدمين)</option>
+                  <option value="staff">موظف إداري (إدخال لجان ومهام ومتابعة)</option>
+                  <option value="consultant">مستشار ضريبي (حضور جلسات وصياغة طعون ودفاع)</option>
+                  <option value="admin">مدير مكتب (صلاحيات كاملة لإضافة مستخدمين وعملاء)</option>
                 </select>
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">كلمة مرور افتراضية لحسابه*</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
-                    <Key className="w-4 h-4" />
-                  </span>
-                  <input 
-                    type="text" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="ABTeam2026!"
-                    className="w-full border border-slate-200 pr-9 pl-3 py-2 rounded-lg text-xs text-left font-mono"
-                    required
-                  />
-                </div>
-                <span className="text-[10px] text-slate-400 mt-1 block">يستطيع الموظف استخدام هذا البريد وكلمة المرور لتسجيل الدخول الفعلي.</span>
               </div>
 
               <button
@@ -326,7 +379,7 @@ export default function UsersPage() {
                 disabled={formLoading}
                 className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-bold text-slate-950 bg-brand-gold hover:bg-brand-gold-hover transition-all shadow-md disabled:opacity-50"
               >
-                {formLoading ? 'جاري تسجيله سحابياً...' : 'تسجيل المستخدم وحفظ الصلاحية'}
+                {formLoading ? 'جاري تسجيل المستخدم...' : 'إصدار الترخيص وتفعيل الحساب'}
               </button>
             </form>
           </div>

@@ -188,7 +188,7 @@ export default function LoginPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="px-2 py-0.5 rounded bg-slate-900 text-[10px] text-brand-gold font-medium border border-slate-800 group-hover:border-brand-gold/20">
-                    {profile.role === 'admin' ? 'مدير عام' : profile.role === 'consultant' ? 'مستشار ضريبي' : 'إداري'}
+                    {profile.role === 'super_admin' ? 'سوبر أدمن (سند)' : profile.role === 'admin' ? 'مدير عام' : profile.role === 'consultant' ? 'مستشار ضريبي' : 'إداري'}
                   </span>
                   <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-[-2px] transition-transform" />
                 </div>

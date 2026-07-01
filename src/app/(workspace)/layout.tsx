@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
-import { db, isSupabaseConfigured, Profile } from '@/lib/supabase';
+import { db, isSupabaseConfigured, Profile, Organization } from '@/lib/supabase';
 import { isRealAiActive } from '@/lib/gemini';
-import { Database, Sparkles, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Database, Sparkles, AlertTriangle, ShieldCheck, Building2 } from 'lucide-react';
 
 export default function WorkspaceLayout({
   children,
@@ -15,6 +15,8 @@ export default function WorkspaceLayout({
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [activeOrgId, setActiveOrgId] = useState<string>('');
 
   useEffect(() => {
     const user = db.getCurrentUser();
@@ -22,20 +24,34 @@ export default function WorkspaceLayout({
       router.push('/');
     } else {
       setCurrentUser(user);
+      
+      // Load organizations list for super-admin switcher
+      if (user.role === 'super_admin') {
+        db.getOrganizations().then(orgs => {
+          setOrganizations(orgs);
+          setActiveOrgId(db.getActiveOrgId());
+        }).catch(err => console.error('Failed to get orgs:', err));
+      }
     }
     setLoading(false);
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-slate-900 border-t-brand-gold rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600 font-semibold text-sm">جاري تحميل بيئة العمل...</p>
-        </div>
+  const handleOrgChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const orgId = e.target.value;
+    db.setActiveOrgId(orgId);
+    setActiveOrgId(orgId);
+    // Reload page to refresh all active database queries with the new tenant's data
+    window.location.reload();
+  };
+
+  if (loading) return (
+    <div className="h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-slate-900 border-t-brand-gold rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-slate-600 font-semibold text-sm">جاري تحميل بيئة العمل...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
   if (!currentUser) return null;
 
@@ -53,13 +69,34 @@ export default function WorkspaceLayout({
             <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               أهلاً بك، {currentUser.name}
               <span className="text-xs font-normal text-slate-400">
-                | دورك الحالي: {currentUser.role === 'admin' ? 'مدير النظام' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
+                | دورك الحالي: {currentUser.role === 'super_admin' ? 'سوبر أدمن (Sanad Finance)' : currentUser.role === 'admin' ? 'مدير النظام' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
               </span>
             </h1>
           </div>
 
-          {/* Cloud Status Indicators */}
-          <div className="flex items-center gap-3">
+          {/* Tenant Selector & Cloud Status Indicators */}
+          <div className="flex items-center gap-4">
+            {/* Tenant switcher dropdown for super_admin */}
+            {currentUser.role === 'super_admin' && organizations.length > 0 && (
+              <div className="flex items-center gap-2 border border-brand-gold/30 bg-brand-gold/10 px-3 py-1.5 rounded-lg shadow-sm">
+                <Building2 className="w-3.5 h-3.5 text-brand-gold" />
+                <span className="text-xs font-extrabold text-slate-850">المنصة النشطة:</span>
+                <select 
+                  value={activeOrgId} 
+                  onChange={handleOrgChange}
+                  className="bg-transparent text-xs font-extrabold text-slate-900 border-none outline-none cursor-pointer focus:ring-0"
+                >
+                  {organizations.map(org => (
+                    <option key={org.id} value={org.id} className="text-slate-900 font-bold bg-white">
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Cloud Status Indicators */}
+            <div className="flex items-center gap-3">
             {/* Supabase Status */}
             <div 
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
@@ -86,7 +123,8 @@ export default function WorkspaceLayout({
               <span>{isRealAiActive ? 'Gemini نشط' : 'محاكي AI'}</span>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* Content Body */}
         <main className="flex-1 p-6 bg-[#F8FAFC] overflow-y-auto">

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { mockDb, Client, Committee, Task, AuditLog, TaxLaw, Profile } from './mockDb';
+import { mockDb, Client, Committee, Task, AuditLog, TaxLaw, Profile, Organization } from './mockDb';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -26,12 +26,54 @@ export const db = {
     return mockDb.getProfiles();
   },
 
-  // Clients
+  // Organizations (Multi-Tenancy)
+  getOrganizations: async (): Promise<Organization[]> => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Supabase getOrganizations error, falling back to mock:', error);
+        return mockDb.getOrganizations();
+      }
+      return data || [];
+    }
+    return mockDb.getOrganizations();
+  },
+
+  addOrganization: async (org: Omit<Organization, 'id' | 'created_at' | 'status'>): Promise<Organization> => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('organizations')
+        .insert([org])
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase addOrganization error, falling back to mock:', error);
+        return mockDb.addOrganization(org);
+      }
+      return data;
+    }
+    return mockDb.addOrganization(org);
+  },
+
+  getActiveOrgId: (): string => {
+    return mockDb.getActiveOrgId();
+  },
+
+  setActiveOrgId: (orgId: string) => {
+    mockDb.setActiveOrgId(orgId);
+  },
+
+  // Clients (Tenant Isolated)
   getClients: async (): Promise<Client[]> => {
+    const activeOrgId = mockDb.getActiveOrgId();
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('clients')
         .select('*')
+        .eq('organization_id', activeOrgId)
         .order('created_at', { ascending: false });
       if (error) {
         console.error('Supabase getClients error, falling back to mock:', error);
@@ -42,11 +84,12 @@ export const db = {
     return mockDb.getClients();
   },
 
-  addClient: async (client: Omit<Client, 'id' | 'created_at' | 'status'>): Promise<Client> => {
+  addClient: async (client: Omit<Client, 'id' | 'created_at' | 'status' | 'organization_id'>): Promise<Client> => {
+    const activeOrgId = mockDb.getActiveOrgId();
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('clients')
-        .insert([{ ...client, status: 'active' }])
+        .insert([{ ...client, organization_id: activeOrgId, status: 'active' }])
         .select()
         .single();
       if (error) {
@@ -78,8 +121,9 @@ export const db = {
     return mockDb.updateClient(id, updatedData);
   },
 
-  // Committees
+  // Committees (Tenant Isolated)
   getCommittees: async (): Promise<Committee[]> => {
+    const activeOrgId = mockDb.getActiveOrgId();
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('committees')
@@ -87,6 +131,7 @@ export const db = {
           *,
           clients ( name )
         `)
+        .eq('organization_id', activeOrgId)
         .order('created_at', { ascending: false });
       if (error) {
         console.error('Supabase getCommittees error, falling back to mock:', error);
@@ -100,12 +145,13 @@ export const db = {
     return mockDb.getCommittees();
   },
 
-  addCommittee: async (committee: Omit<Committee, 'id' | 'created_at' | 'status'>): Promise<Committee> => {
+  addCommittee: async (committee: Omit<Committee, 'id' | 'created_at' | 'status' | 'organization_id'>): Promise<Committee> => {
+    const activeOrgId = mockDb.getActiveOrgId();
     if (isSupabaseConfigured && supabase) {
       const currentUser = db.getCurrentUser();
       const { data, error } = await supabase
         .from('committees')
-        .insert([{ ...committee, status: 'pending', created_by: currentUser.id }])
+        .insert([{ ...committee, organization_id: activeOrgId, status: 'pending', created_by: currentUser.id }])
         .select()
         .single();
       if (error) {
@@ -137,8 +183,9 @@ export const db = {
     return mockDb.updateCommittee(id, updatedData);
   },
 
-  // Tasks
+  // Tasks (Tenant Isolated)
   getTasks: async (): Promise<Task[]> => {
+    const activeOrgId = mockDb.getActiveOrgId();
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('tasks')
@@ -147,6 +194,7 @@ export const db = {
           profiles ( name ),
           committees ( subject )
         `)
+        .eq('organization_id', activeOrgId)
         .order('due_date', { ascending: true });
       if (error) {
         console.error('Supabase getTasks error, falling back to mock:', error);
@@ -161,11 +209,12 @@ export const db = {
     return mockDb.getTasks();
   },
 
-  addTask: async (task: Omit<Task, 'id' | 'created_at' | 'status'>): Promise<Task> => {
+  addTask: async (task: Omit<Task, 'id' | 'created_at' | 'status' | 'organization_id'>): Promise<Task> => {
+    const activeOrgId = mockDb.getActiveOrgId();
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('tasks')
-        .insert([{ ...task, status: 'pending' }])
+        .insert([{ ...task, organization_id: activeOrgId, status: 'pending' }])
         .select()
         .single();
       if (error) {
@@ -212,12 +261,14 @@ export const db = {
     mockDb.deleteTask(id);
   },
 
-  // Audit Logs
+  // Audit Logs (Tenant Isolated)
   getAuditLogs: async (): Promise<AuditLog[]> => {
+    const activeOrgId = mockDb.getActiveOrgId();
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('audit_logs')
         .select('*')
+        .eq('organization_id', activeOrgId)
         .order('created_at', { ascending: false })
         .limit(100);
       if (error) {
@@ -230,6 +281,7 @@ export const db = {
   },
 
   addAuditLog: async (action: string, details?: string): Promise<AuditLog> => {
+    const activeOrgId = mockDb.getActiveOrgId();
     // Audit logs must be added to local mock db to maintain local trail
     const localLog = mockDb.addAuditLog(action, details);
     
@@ -238,6 +290,7 @@ export const db = {
       const { data, error } = await supabase
         .from('audit_logs')
         .insert([{
+          organization_id: activeOrgId,
           user_id: currentUser.id,
           user_name: currentUser.name,
           user_role: currentUser.role,
@@ -288,4 +341,4 @@ export const db = {
     mockDb.resetMockDb();
   }
 };
-export type { Client, Committee, Task, AuditLog, TaxLaw, Profile };
+export type { Client, Committee, Task, AuditLog, TaxLaw, Profile, Organization };

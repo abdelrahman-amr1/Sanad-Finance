@@ -6,6 +6,9 @@ export interface Organization {
   name: string;
   slug: string;
   status: 'active' | 'suspended';
+  address?: string; // عنوان المكتب
+  phone?: string; // هاتف المكتب
+  description?: string; // تفاصيل ونبذة عن المكتب
   created_at: string;
 }
 
@@ -85,8 +88,26 @@ export interface TaxLaw {
 
 // Initial Seed Data with valid PostgreSQL UUID strings for multi-tenant SaaS compatibility
 const defaultOrganizations: Organization[] = [
-  { id: '11111111-1111-1111-1111-111111111111', name: 'Sameh Samir - A&B team', slug: 'sameh-samir-ab-team', status: 'active', created_at: new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString() },
-  { id: '22222222-2222-2222-2222-222222222222', name: 'مكتب النور للاستشارات والضرائب', slug: 'al-nour-tax', status: 'active', created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() }
+  { 
+    id: '11111111-1111-1111-1111-111111111111', 
+    name: 'Sameh Samir - A&B team', 
+    slug: 'sameh-samir-ab-team', 
+    status: 'active', 
+    address: 'شارع البطل أحمد عبد العزيز، المهندسين، الجيزة',
+    phone: '02-33445566',
+    description: 'المكتب الاستشاري الرئيسي للمجموعة، متخصص في لجان فحص القيمة المضافة وضريبة الدخل لكبرى الشركات المساهمة.',
+    created_at: new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString() 
+  },
+  { 
+    id: '22222222-2222-2222-2222-222222222222', 
+    name: 'مكتب النور للاستشارات والضرائب', 
+    slug: 'al-nour-tax', 
+    status: 'active', 
+    address: 'شارع فؤاد، وسط البلد، الإسكندرية',
+    phone: '03-4889900',
+    description: 'مكتب استشاري متخصص في المنازعات الجمركية وضرائب المهن الحرة لقطاع الاستيراد والتصدير بالإسكندرية.',
+    created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() 
+  }
 ];
 
 const defaultProfiles: Profile[] = [
@@ -128,7 +149,7 @@ const defaultLaws: TaxLaw[] = [
   { id: 'law-1', law_number: '91', law_year: '2005', law_type: 'ضريبة الدخل', article_number: '8', content: 'تُحدد أسعار الضريبة على دخل الأشخاص الطبيعيين على عدة شرائح تبدأ من الشريحة المعفاة البالغة 15,000 جنيه سنوياً، وتتدرج نسب الضريبة لتصل إلى 25% ثم 27.5% لأصحاب الدخول المرتفعة التي تفوق المليون جنيه سنوياً.' },
   { id: 'law-2', law_number: '91', law_year: '2005', law_type: 'ضريبة الدخل', article_number: '110', content: 'يستحق مقابل تأخير على ما لا يتم أداؤه من الضريبة في موعدها القانوني. ويتم حساب مقابل التأخير على أساس سعر الائتمان والخصم المعلن من البنك المركزي المصري مضافاً إليه 2%.' },
   { id: 'law-3', law_number: '67', law_year: '2016', law_type: 'ضريبة القيمة المضافة', article_number: '2', content: 'تفرض الضريبة على السلع والخدمات المحلية والمستوردة في كافة مراحل تداولها إلا ما استثني بنص خاص. ويُلتزم بتسجيل الموردين فور بلوغ حجم مبيعاتهم 500 ألف جنيه مصري.' },
-  { id: 'law-4', law_number: '67', law_year: '2016', law_type: 'ضريبة القيمة المضافة', article_number: '3', content: 'يكون السعر العام لضريبة القيمة المضافة هو 14% على جميع السلع والخدمات الخاضعة، باستثناء السلع والخدمات المعفاة الواردة in جدول الإعفاءات المرفق بالقانون.' },
+  { id: 'law-4', law_number: '67', law_year: '2016', law_type: 'ضريبة القيمة المضافة', article_number: '3', content: 'يكون السعر العام لضريبة القيمة المضافة هو 14% على جميع السلع والخدمات الخاضعة، باستثناء السلع والخدمات المعفاة الواردة في جدول الإعفاءات المرفق بالقانون.' },
   { id: 'law-5', law_number: '206', law_year: '2020', law_type: 'قانون الإجراءات الضريبية الموحد', article_number: '31', content: 'يجب على كل ممول تقديم الإقرار الضريبي السنوي أو الشهري إلكترونياً. ويحدد القانون مواعيد صارمة لتقديم الإقرارات: 3 أشهر للشركات، وشهر تالٍ لضريبة القيمة المضافة.' }
 ];
 

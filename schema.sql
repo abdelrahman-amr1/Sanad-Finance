@@ -20,12 +20,15 @@ DROP TABLE IF EXISTS public.tax_laws CASCADE;
 -- 2. CREATE TABLES (Dependencies ordered: Parent tables first)
 -- =========================================================================
 
--- A. Organizations (Tenants)
+-- A. Organizations (Tenants) - Upgraded with address, phone, and description details
 CREATE TABLE public.organizations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL, -- e.g. sameh-samir-ab-team
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
+    address TEXT, -- عنوان المكتب
+    phone TEXT, -- هاتف المكتب
+    description TEXT, -- تفاصيل/نبذة عن المكتب
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 

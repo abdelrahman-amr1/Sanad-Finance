@@ -7,7 +7,9 @@ import {
   ShieldAlert, 
   Calendar, 
   Globe, 
-  FileText,
+  MapPin, 
+  Phone, 
+  Info,
   Activity
 } from 'lucide-react';
 import { db, Profile, Organization } from '@/lib/supabase';
@@ -22,6 +24,9 @@ export default function OrganizationsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [description, setDescription] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -59,7 +64,13 @@ export default function OrganizationsPage() {
     setFormError('');
 
     try {
-      await db.addOrganization({ name, slug });
+      await db.addOrganization({ 
+        name, 
+        slug, 
+        address: address || undefined, 
+        phone: phone || undefined, 
+        description: description || undefined 
+      });
       
       // Trigger confetti
       confetti({
@@ -71,6 +82,9 @@ export default function OrganizationsPage() {
       setIsModalOpen(false);
       setName('');
       setSlug('');
+      setAddress('');
+      setPhone('');
+      setDescription('');
       
       // Refresh list
       await fetchOrganizations();
@@ -106,7 +120,7 @@ export default function OrganizationsPage() {
             إدارة المكاتب والمنصات التابعة (Sanad Finance SaaS)
           </h2>
           <p className="text-slate-500 text-xs mt-1">
-            بوابة الإشراف العام لـ أ. عبد الرحمن عمرو لإضافة مكاتب الاستشارات القانونية وتحديد روابطها الفرعية.
+            بوابة الإشراف العام لـ أ. عبد الرحمن عمرو لإضافة مكاتب الاستشارات القانونية وتحديد روابطها الفرعية وتفاصيلها.
           </p>
         </div>
         <button
@@ -134,8 +148,8 @@ export default function OrganizationsPage() {
               {/* Gold Top line */}
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-brand-gold" />
 
-              {/* Title & Slug */}
-              <div className="space-y-1">
+              {/* Title, Slug & Details */}
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-extrabold text-slate-900">{org.name}</h3>
                   <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-bold ${
@@ -145,10 +159,10 @@ export default function OrganizationsPage() {
                   </span>
                 </div>
                 
-                {/* Domain info */}
+                {/* Domain Link */}
                 <div className="flex items-center gap-1.5 text-slate-500 font-medium text-[11px]">
                   <Globe className="w-3.5 h-3.5 text-brand-gold" />
-                  <span>النطاق: </span>
+                  <span className="font-bold text-slate-700">النطاق السحابي:</span>
                   <a 
                     href={`https://${org.slug}-sanadfinance.vercel.app`}
                     target="_blank" 
@@ -157,6 +171,29 @@ export default function OrganizationsPage() {
                   >
                     {org.slug}-sanadfinance.vercel.app
                   </a>
+                </div>
+
+                {/* Description Box */}
+                {org.description && (
+                  <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100 font-medium">
+                    {org.description}
+                  </p>
+                )}
+
+                {/* Address & Phone */}
+                <div className="space-y-1.5 pt-1">
+                  {org.address && (
+                    <div className="flex items-start gap-1.5 text-[11px] text-slate-500 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-brand-gold shrink-0 mt-0.5" />
+                      <span>{org.address}</span>
+                    </div>
+                  )}
+                  {org.phone && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                      <Phone className="w-3.5 h-3.5 text-brand-gold shrink-0" />
+                      <span className="font-mono">{org.phone}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -227,6 +264,39 @@ export default function OrganizationsPage() {
                     {slug || 'alamal-tax'}-sanadfinance.vercel.app
                   </code>
                 </span>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">عنوان المقر الرئيسي</label>
+                <input 
+                  type="text" 
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="مثال: 12 شارع التسعين، التجمع الخامس، القاهرة"
+                  className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">هاتف التواصل للمكتب</label>
+                <input 
+                  type="text" 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="مثال: 02-33445566"
+                  className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-mono text-left text-right"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">تفاصيل ونبذة عن المكتب</label>
+                <textarea 
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="اكتب نبذة عن التخصص أو حجم القضايا ولجان الطعن التي يديرها المكتب..."
+                  rows={3}
+                  className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs"
+                />
               </div>
 
               <button

@@ -64,7 +64,13 @@ export default function UsersPage() {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, role, password })
+        body: JSON.stringify({ 
+          email, 
+          name, 
+          role, 
+          organizationId: currentUser?.organization_id, // Link to the same tenant company
+          password 
+        })
       });
 
       const data = await response.json();

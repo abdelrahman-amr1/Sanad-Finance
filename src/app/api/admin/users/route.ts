@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, name, role, password = 'ABTeam2026!' } = await req.json();
+    const { email, name, role, organizationId, password = 'ABTeam2026!' } = await req.json();
     
     if (!email || !name || !role) {
       return NextResponse.json({ error: 'Email, Name, and Role are required' }, { status: 400 });
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         throw new Error('User creation returned empty payload');
       }
 
-      // Create profile row linked to auth user
+      // Create profile row linked to auth user and the specific tenant organization
       const { data: profileData, error: profileError } = await supabaseAdmin
         .from('profiles')
         .insert([{
@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
           name,
           email,
           role,
+          organization_id: organizationId || null,
           avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces` // Default generic avatar
         }])
         .select()
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
       name,
       email,
       role,
+      organization_id: organizationId || undefined,
       avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=faces`
     };
 

@@ -13,7 +13,8 @@ import {
   Shield, 
   UserCheck, 
   ChevronDown,
-  RefreshCw
+  RefreshCw,
+  Building2
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { db, Profile } from '@/lib/supabase';
@@ -74,6 +75,12 @@ export const Sidebar: React.FC = () => {
       href: '/users',
       icon: Users,
       roles: ['admin']
+    },
+    {
+      name: 'إدارة المنصات',
+      href: '/organizations',
+      icon: Building2,
+      roles: ['super_admin']
     }
   ];
 

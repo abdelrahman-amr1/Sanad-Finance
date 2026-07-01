@@ -128,7 +128,7 @@ const defaultLaws: TaxLaw[] = [
   { id: 'law-1', law_number: '91', law_year: '2005', law_type: 'ضريبة الدخل', article_number: '8', content: 'تُحدد أسعار الضريبة على دخل الأشخاص الطبيعيين على عدة شرائح تبدأ من الشريحة المعفاة البالغة 15,000 جنيه سنوياً، وتتدرج نسب الضريبة لتصل إلى 25% ثم 27.5% لأصحاب الدخول المرتفعة التي تفوق المليون جنيه سنوياً.' },
   { id: 'law-2', law_number: '91', law_year: '2005', law_type: 'ضريبة الدخل', article_number: '110', content: 'يستحق مقابل تأخير على ما لا يتم أداؤه من الضريبة في موعدها القانوني. ويتم حساب مقابل التأخير على أساس سعر الائتمان والخصم المعلن من البنك المركزي المصري مضافاً إليه 2%.' },
   { id: 'law-3', law_number: '67', law_year: '2016', law_type: 'ضريبة القيمة المضافة', article_number: '2', content: 'تفرض الضريبة على السلع والخدمات المحلية والمستوردة في كافة مراحل تداولها إلا ما استثني بنص خاص. ويُلتزم بتسجيل الموردين فور بلوغ حجم مبيعاتهم 500 ألف جنيه مصري.' },
-  { id: 'law-4', law_number: '67', law_year: '2016', law_type: 'ضريبة القيمة المضافة', article_number: '3', content: 'يكون السعر العام لضريبة القيمة المضافة هو 14% على جميع السلع والخدمات الخاضعة، باستثناء السلع والخدمات المعفاة الواردة في جدول الإعفاءات المرفق بالقانون.' },
+  { id: 'law-4', law_number: '67', law_year: '2016', law_type: 'ضريبة القيمة المضافة', article_number: '3', content: 'يكون السعر العام لضريبة القيمة المضافة هو 14% على جميع السلع والخدمات الخاضعة، باستثناء السلع والخدمات المعفاة الواردة in جدول الإعفاءات المرفق بالقانون.' },
   { id: 'law-5', law_number: '206', law_year: '2020', law_type: 'قانون الإجراءات الضريبية الموحد', article_number: '31', content: 'يجب على كل ممول تقديم الإقرار الضريبي السنوي أو الشهري إلكترونياً. ويحدد القانون مواعيد صارمة لتقديم الإقرارات: 3 أشهر للشركات، وشهر تالٍ لضريبة القيمة المضافة.' }
 ];
 
@@ -137,6 +137,14 @@ const isClient = typeof window !== 'undefined';
 const getFromStorage = <T>(key: string, defaultValue: T): T => {
   if (!isClient) return defaultValue;
   const stored = localStorage.getItem(key);
+  
+  // Auto-healing check: If the stored data contains old Super Admin name 'خالد سند', reset the key
+  if (stored && stored.includes('خالد سند')) {
+    localStorage.removeItem(key);
+    localStorage.setItem(key, JSON.stringify(defaultValue));
+    return defaultValue;
+  }
+  
   if (!stored) {
     localStorage.setItem(key, JSON.stringify(defaultValue));
     return defaultValue;
@@ -241,7 +249,12 @@ export const mockDb = {
     let profilesList = defaultList;
     if (isClient) {
       const stored = localStorage.getItem('ab_mock_profiles');
-      if (stored) {
+      // Auto-healing profiles list if it has old super admin
+      if (stored && stored.includes('خالد سند')) {
+        localStorage.removeItem('ab_mock_profiles');
+        localStorage.setItem('ab_mock_profiles', JSON.stringify(defaultList));
+        profilesList = defaultList;
+      } else if (stored) {
         try {
           profilesList = JSON.parse(stored);
         } catch (e) {}

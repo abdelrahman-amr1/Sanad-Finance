@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { db, Profile } from '@/lib/supabase';
+import { db, Profile, isSupabaseConfigured } from '@/lib/supabase';
 import { getTenantFromHostname, getSlugFromHostname } from '@/lib/mockDb';
 import { Shield, Lock, Mail, Users, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [resolvingTenant, setResolvingTenant] = useState(true);
+  const [isTenantMode, setIsTenantMode] = useState(false);
+  const [tenantName, setTenantName] = useState('سند للتمويل (Sanad Finance)');
 
   useEffect(() => {
     const resolveTenant = async () => {
@@ -26,6 +28,7 @@ export default function LoginPage() {
           if (org) {
             localStorage.setItem('ab_active_org_id', org.id);
             localStorage.setItem('ab_tenant_org', JSON.stringify(org));
+            setTenantName(org.name);
           }
         } catch (e) {
           console.error('Failed to resolve login tenant:', e);
@@ -47,17 +50,44 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
     
-    // Check if we are on a specific tenant subdomain
+    // Check if we are on a specific tenant subdomain or have an active tenant session
     const tenant = getTenantFromHostname();
-    let allProfiles = db.getProfiles();
+    const storedTenant = typeof window !== 'undefined' ? localStorage.getItem('ab_tenant_org') : null;
+    
+    let tenantOrgId: string | undefined = undefined;
+    let isTenantContext = false;
     
     if (tenant.isSubdomain && tenant.orgId) {
+      tenantOrgId = tenant.orgId;
+      isTenantContext = true;
+    } else if (storedTenant) {
+      try {
+        const parsed = JSON.parse(storedTenant);
+        if (parsed && parsed.id) {
+          tenantOrgId = parsed.id;
+          isTenantContext = true;
+          setTenantName(parsed.name);
+        }
+      } catch (e) {}
+    }
+
+    setIsTenantMode(isTenantContext);
+    
+    let allProfiles = db.getProfiles(); // Returns filtered or all based on active Org
+    
+    if (isTenantContext && tenantOrgId) {
       // Filter: Only show profiles belonging to this tenant organization, hiding super_admin
-      allProfiles = allProfiles.filter(p => p.organization_id === tenant.orgId);
+      allProfiles = allProfiles.filter(p => p.organization_id === tenantOrgId);
     }
     
     setProfiles(allProfiles);
   }, [resolvingTenant, router]);
+
+  useEffect(() => {
+    if (tenantName) {
+      document.title = `سند للتمويل | ${tenantName}`;
+    }
+  }, [tenantName]);
 
   const handleSimulateLogin = (profile: Profile) => {
     setLoading(true);
@@ -123,8 +153,8 @@ export default function LoginPage() {
           <h2 className="text-xl font-extrabold text-white text-center">
             نظام إدارة الاستشارات القانونية والضريبية الذكي
           </h2>
-          <p className="mt-1.5 text-xs text-brand-gold font-semibold tracking-wide">
-            Sameh Samir - A&B team
+          <p className="mt-1.5 text-xs text-brand-gold font-semibold tracking-wide text-center">
+            {tenantName}
           </p>
         </div>
 
@@ -133,18 +163,18 @@ export default function LoginPage() {
           
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brand-gold/50 to-transparent" />
 
-          <h3 className="text-base font-bold text-slate-200 mb-6 flex items-center gap-2 border-b border-slate-800 pb-3">
+          <h3 className="text-lg font-extrabold text-white mb-6 flex items-center gap-2">
             <Lock className="w-4 h-4 text-brand-gold" />
             تسجيل الدخول للمنصة
           </h3>
 
           {error && (
-            <div className="mb-4 bg-red-900/20 border border-red-500/30 text-red-200 text-xs p-3 rounded-lg">
+            <div className="bg-red-900/20 border border-red-800 text-red-300 p-3 rounded-lg text-xs font-bold mb-4">
               {error}
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={handleFormLogin}>
+          <form onSubmit={handleFormLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-350 mb-1.5">
                 البريد الإلكتروني للعمل
@@ -157,7 +187,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@abteam.com"
+                  placeholder="name@company.com"
                   className="block w-full pr-10 pl-3 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 text-sm placeholder-slate-650 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all"
                 />
               </div>
@@ -226,13 +256,17 @@ export default function LoginPage() {
                     )}
                   </div>
                   <div>
-                    <span className="font-bold block">{profile.name}</span>
-                    <span className="text-[10px] text-slate-400 block">{profile.email}</span>
+                    <span className="font-bold block text-right">{profile.name}</span>
+                    <span className="text-[10px] text-slate-400 block text-right">{profile.email}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded bg-slate-900 text-[10px] text-brand-gold font-medium border border-slate-800 group-hover:border-brand-gold/20">
-                    {profile.role === 'super_admin' ? 'سوبر أدمن (سند)' : profile.role === 'admin' ? 'مدير عام' : profile.role === 'consultant' ? 'مستشار ضريبي' : 'إداري'}
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-medium border border-slate-800 group-hover:border-brand-gold/20 ${
+                    profile.role === 'super_admin' ? 'bg-brand-navy text-brand-gold' : 
+                    profile.role === 'admin' ? 'bg-slate-900 text-white' : 
+                    profile.role === 'consultant' ? 'bg-brand-gold/15 text-brand-gold' : 'bg-blue-900/10 text-blue-400'
+                  }`}>
+                    {profile.role === 'super_admin' ? 'سوبر أدمن' : profile.role === 'admin' ? 'مدير مكتب' : profile.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
                   </span>
                   <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-[-2px] transition-transform" />
                 </div>
@@ -240,11 +274,28 @@ export default function LoginPage() {
             ))}
           </div>
 
+          {/* Go back to main portal option */}
+          {isTenantMode && (
+            <div className="mt-5 pt-4 border-t border-slate-800 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('ab_tenant_org');
+                  localStorage.removeItem('ab_active_org_id');
+                  window.location.reload();
+                }}
+                className="text-[11px] font-bold text-brand-gold hover:underline flex items-center justify-center gap-1 mx-auto"
+              >
+                « العودة لمنصة سند الرئيسية (سوبر أدمن)
+              </button>
+            </div>
+          )}
+
         </div>
 
         {/* Footer legal disclaimer */}
-        <p className="mt-8 text-center text-[10px] text-slate-500">
-          حقوق الطبع محفوظة &copy; {new Date().getFullYear()} Sameh Samir - A&B team.
+        <p className="mt-8 text-center text-[10px] text-slate-500 leading-relaxed">
+          حقوق الطبع محفوظة &copy; {new Date().getFullYear()} {tenantName}.
           <br />
           جميع الاستشارات والبيانات المسجلة تخضع لاتفاقية السرية وحماية بيانات الممولين.
         </p>

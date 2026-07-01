@@ -62,6 +62,19 @@ export default function WorkspaceLayout({
     setLoading(false);
   }, [resolvingTenant, router]);
 
+  useEffect(() => {
+    if (resolvingTenant) return;
+    const activeId = db.getActiveOrgId();
+    if (activeId) {
+      db.getOrganizations().then(orgs => {
+        const match = orgs.find(o => o.id === activeId);
+        if (match) {
+          document.title = `سند للتمويل | ${match.name}`;
+        }
+      }).catch(err => console.error(err));
+    }
+  }, [resolvingTenant, activeOrgId]);
+
   const handleOrgChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const orgId = e.target.value;
     db.setActiveOrgId(orgId);

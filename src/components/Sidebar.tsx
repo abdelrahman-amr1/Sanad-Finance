@@ -28,11 +28,12 @@ export const Sidebar: React.FC = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
 
   const handleLogout = () => {
-    db.setCurrentUser(null);
-    router.push('/');
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+    db.signOut().then(() => {
+      router.push('/');
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    });
   };
 
   useEffect(() => {

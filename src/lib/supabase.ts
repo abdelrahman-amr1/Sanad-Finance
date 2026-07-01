@@ -15,11 +15,25 @@ export const supabase = isSupabaseConfigured
 export const db = {
   // Authentication & RBAC User Simulation
   getCurrentUser: (): Profile | null => {
+    if (typeof window === 'undefined') return null;
+    const stored = localStorage.getItem('ab_current_user');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {}
+    }
     return mockDb.getCurrentUser();
   },
 
   setCurrentUser: (profile: Profile | null) => {
     mockDb.setCurrentUser(profile);
+    if (typeof window !== 'undefined') {
+      if (profile) {
+        localStorage.setItem('ab_current_user', JSON.stringify(profile));
+      } else {
+        localStorage.removeItem('ab_current_user');
+      }
+    }
   },
 
   getProfiles: (): Profile[] => {
@@ -373,6 +387,58 @@ export const db = {
 
   resetMockDb: () => {
     mockDb.resetMockDb();
+  },
+
+  // Real Supabase Authentication wrappers
+  signIn: async (email: string, password: string) => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      return { data, error };
+    }
+    return { data: null, error: new Error('Supabase not configured') };
+  },
+
+  signOut: async () => {
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
+    db.setCurrentUser(null);
+  },
+
+  getProfileById: async (id: string): Promise<Profile | null> => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!error && data) {
+        return data;
+      }
+    }
+    return mockDb.getProfiles().find(p => p.id === id) || null;
   }
 };
+
+// Background Session Sync Listener for Supabase Auth
+if (typeof window !== 'undefined' && isSupabaseConfigured && supabase) {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      if (profile) {
+        localStorage.setItem('ab_current_user', JSON.stringify(profile));
+        if (profile.organization_id) {
+          localStorage.setItem('ab_active_org_id', profile.organization_id);
+        }
+      }
+    } else {
+      localStorage.removeItem('ab_current_user');
+      localStorage.removeItem('ab_active_org_id');
+    }
+  });
+}
 export type { Client, Committee, Task, AuditLog, TaxLaw, Profile, Organization };

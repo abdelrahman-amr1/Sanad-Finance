@@ -106,19 +106,67 @@ export default function LoginPage() {
     }, 800);
   };
 
-  const handleFormLogin = (e: React.FormEvent) => {
+  const handleFormLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('يرجى إدخال البريد الإلكتروني وكلمة المرور');
       return;
     }
     
-    // Find matching profile in mock or show error
-    const match = profiles.find(p => p.email === email);
-    if (match) {
-      handleSimulateLogin(match);
-    } else {
-      setError('الحساب غير مسجل في النظام. يرجى استخدام حساب المحاكاة بالأسفل للتجربة الفورية.');
+    setLoading(true);
+    setError('');
+
+    try {
+      if (isSupabaseConfigured) {
+        const { data, error: authError } = await db.signIn(email, password);
+        if (authError) {
+          setError(authError.message || 'خطأ في البريد الإلكتروني أو كلمة المرور');
+        } else if (data?.user) {
+          const profile = await db.getProfileById(data.user.id);
+          if (profile) {
+            // Verify tenant scope if in tenant context
+            const tenant = getTenantFromHostname();
+            const storedTenant = localStorage.getItem('ab_tenant_org');
+            let tenantOrgId = tenant.isSubdomain ? tenant.orgId : null;
+            if (!tenantOrgId && storedTenant) {
+              try {
+                tenantOrgId = JSON.parse(storedTenant).id;
+              } catch (err) {}
+            }
+
+            if (tenantOrgId && profile.role !== 'super_admin' && profile.organization_id !== tenantOrgId) {
+              await db.signOut();
+              setError('عذراً، هذا الحساب غير مصرح له بالدخول لمكتب الاستشارات هذا.');
+              setLoading(false);
+              return;
+            }
+
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              origin: { y: 0.8 },
+              colors: ['#CE1126', '#FFFFFF', '#000000', '#C5A880']
+            });
+
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 800);
+          } else {
+            setError('لم يتم العثور على ملف تعريف لهذا المستخدم. يرجى التواصل مع الدعم الفني.');
+          }
+        }
+      } else {
+        const match = profiles.find(p => p.email === email);
+        if (match) {
+          handleSimulateLogin(match);
+        } else {
+          setError('الحساب غير مسجل في النظام المحلي.');
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'حدث خطأ غير متوقع');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -224,55 +272,59 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Separation line */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-2 bg-slate-900 text-slate-400 font-medium">أو الدخول السريع للمحاكاة</span>
-            </div>
-          </div>
+          {/* Quick Simulation logins (Only shown in Mock Mode) */}
+          {!isSupabaseConfigured && (
+            <>
+              {/* Separation line */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-800"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="px-2 bg-slate-900 text-slate-400 font-medium">أو الدخول السريع للمحاكاة</span>
+                </div>
+              </div>
 
-          {/* Quick Simulation logins */}
-          <div className="space-y-2.5">
-            <p className="text-[11px] text-slate-400 text-center mb-1">
-              اختر أحد الموظفين لتجربة لوحة التحكم والصلاحيات (RBAC) فوراً:
-            </p>
-            {profiles.map((profile) => (
-              <button
-                key={profile.id}
-                type="button"
-                onClick={() => handleSimulateLogin(profile)}
-                disabled={loading}
-                className="w-full flex items-center justify-between p-2.5 bg-slate-950/50 hover:bg-slate-900 border border-slate-800 hover:border-brand-gold/30 rounded-lg text-slate-300 hover:text-white transition-all text-xs text-right group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full overflow-hidden bg-brand-gold/10 border border-brand-gold/20 flex-shrink-0 flex items-center justify-center font-bold text-[10px] text-brand-gold">
-                    {profile.avatar_url ? (
-                      <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
-                    ) : (
-                      profile.name[0]
-                    )}
-                  </div>
-                  <div>
-                    <span className="font-bold block text-right">{profile.name}</span>
-                    <span className="text-[10px] text-slate-400 block text-right">{profile.email}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-medium border border-slate-800 group-hover:border-brand-gold/20 ${
-                    profile.role === 'super_admin' ? 'bg-brand-navy text-brand-gold' : 
-                    profile.role === 'admin' ? 'bg-slate-900 text-white' : 
-                    profile.role === 'consultant' ? 'bg-brand-gold/15 text-brand-gold' : 'bg-blue-900/10 text-blue-400'
-                  }`}>
-                    {profile.role === 'super_admin' ? 'سوبر أدمن' : profile.role === 'admin' ? 'مدير مكتب' : profile.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
-                  </span>
-                  <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-[-2px] transition-transform" />
-                </div>
-              </button>
-            ))}
-          </div>
+              <div className="space-y-2.5">
+                <p className="text-[11px] text-slate-400 text-center mb-1">
+                  اختر أحد الموظفين لتجربة لوحة التحكم والصلاحيات (RBAC) فوراً:
+                </p>
+                {profiles.map((profile) => (
+                  <button
+                    key={profile.id}
+                    type="button"
+                    onClick={() => handleSimulateLogin(profile)}
+                    disabled={loading}
+                    className="w-full flex items-center justify-between p-2.5 bg-slate-950/50 hover:bg-slate-900 border border-slate-800 hover:border-brand-gold/30 rounded-lg text-slate-300 hover:text-white transition-all text-xs text-right group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-full overflow-hidden bg-brand-gold/10 border border-brand-gold/20 flex-shrink-0 flex items-center justify-center font-bold text-[10px] text-brand-gold">
+                        {profile.avatar_url ? (
+                          <img src={profile.avatar_url} alt={profile.name} className="w-full h-full object-cover" />
+                        ) : (
+                          profile.name[0]
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-bold block text-right">{profile.name}</span>
+                        <span className="text-[10px] text-slate-400 block text-right">{profile.email}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border border-slate-800 group-hover:border-brand-gold/20 ${
+                        profile.role === 'super_admin' ? 'bg-brand-navy text-brand-gold' : 
+                        profile.role === 'admin' ? 'bg-slate-900 text-white' : 
+                        profile.role === 'consultant' ? 'bg-brand-gold/15 text-brand-gold' : 'bg-blue-900/10 text-blue-400'
+                      }`}>
+                        {profile.role === 'super_admin' ? 'سوبر أدمن' : profile.role === 'admin' ? 'مدير مكتب' : profile.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
+                      </span>
+                      <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:translate-x-[-2px] transition-transform" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Go back to main portal option */}
           {isTenantMode && (

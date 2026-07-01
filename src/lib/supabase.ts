@@ -423,19 +423,21 @@ export const db = {
 // Background Session Sync Listener for Supabase Auth
 if (typeof window !== 'undefined' && isSupabaseConfigured && supabase) {
   supabase.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      if (profile) {
-        localStorage.setItem('ab_current_user', JSON.stringify(profile));
-        if (profile.organization_id) {
-          localStorage.setItem('ab_active_org_id', profile.organization_id);
+    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        if (profile) {
+          localStorage.setItem('ab_current_user', JSON.stringify(profile));
+          if (profile.organization_id) {
+            localStorage.setItem('ab_active_org_id', profile.organization_id);
+          }
         }
       }
-    } else {
+    } else if (event === 'SIGNED_OUT') {
       localStorage.removeItem('ab_current_user');
       localStorage.removeItem('ab_active_org_id');
     }

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { db, Profile } from '@/lib/supabase';
+import { getTenantFromHostname } from '@/lib/mockDb';
 import { Shield, Lock, Mail, Users, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -21,7 +22,17 @@ export default function LoginPage() {
     if (user && typeof window !== 'undefined' && localStorage.getItem('ab_current_user')) {
       router.push('/dashboard');
     }
-    setProfiles(db.getProfiles());
+    
+    // Check if we are on a specific tenant subdomain
+    const tenant = getTenantFromHostname();
+    let allProfiles = db.getProfiles();
+    
+    if (tenant.isSubdomain && tenant.orgId) {
+      // Filter: Only show profiles belonging to this tenant organization, hiding super_admin
+      allProfiles = allProfiles.filter(p => p.organization_id === tenant.orgId);
+    }
+    
+    setProfiles(allProfiles);
   }, [router]);
 
   const handleSimulateLogin = (profile: Profile) => {

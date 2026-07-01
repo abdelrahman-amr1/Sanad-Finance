@@ -153,6 +153,32 @@ const saveToStorage = <T>(key: string, value: T) => {
   }
 };
 
+// Client-side domain routing helper to isolate tenants by domain name
+export const getTenantFromHostname = (): { isSubdomain: boolean; orgId?: string; slug?: string } => {
+  if (!isClient) {
+    return { isSubdomain: false };
+  }
+  
+  const hostname = window.location.hostname;
+  
+  // Lock tenant context if the user opens the specific tenant domain
+  if (hostname.includes('sameh-samir-a-b-team') || hostname.includes('sameh-samir-ab-team')) {
+    return {
+      isSubdomain: true,
+      orgId: '11111111-1111-1111-1111-111111111111',
+      slug: 'sameh-samir-ab-team'
+    };
+  } else if (hostname.includes('al-nour-tax') || hostname.includes('alnour')) {
+    return {
+      isSubdomain: true,
+      orgId: '22222222-2222-2222-2222-222222222222',
+      slug: 'al-nour-tax'
+    };
+  }
+  
+  return { isSubdomain: false };
+};
+
 export const mockDb = {
   // Organizations
   getOrganizations: (): Organization[] => {
@@ -173,14 +199,19 @@ export const mockDb = {
     return newOrg;
   },
 
-  // Active Tenant Context (for Super Admin)
+  // Active Tenant Context (for Super Admin & Subdomain lock)
   getActiveOrgId: (): string => {
+    // 1. If we are on a specific subdomain/custom domain, force the corresponding organization
+    const tenant = getTenantFromHostname();
+    if (tenant.isSubdomain && tenant.orgId) {
+      return tenant.orgId;
+    }
+
+    // 2. Otherwise fall back to user profile role or switcher settings
     const user = mockDb.getCurrentUser();
-    // Default to user's own organization if they are not super_admin
     if (user.role !== 'super_admin') {
       return user.organization_id || '11111111-1111-1111-1111-111111111111';
     }
-    // For super_admin, look up active selected org in storage
     return getFromStorage<string>('ab_active_org_id', '11111111-1111-1111-1111-111111111111');
   },
 
@@ -301,7 +332,7 @@ export const mockDb = {
     saveToStorage('ab_committees', committees);
     
     const client = mockDb.getClients().find(c => c.id === committees[idx].client_id);
-    let actionDesc = `تعديل بيانات ملف اللجنة للعميل: ${client?.name}`;
+    let actionDesc = `تعديل بيانات ملف لجنة للعميل: ${client?.name}`;
     if (updatedData.stage && updatedData.stage !== oldStage) {
       actionDesc = `تحويل مرحلة اللجنة للعميل ${client?.name} من [${oldStage}] إلى [${updatedData.stage}]`;
     }

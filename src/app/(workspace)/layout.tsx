@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { db, isSupabaseConfigured, Profile, Organization } from '@/lib/supabase';
+import { getTenantFromHostname } from '@/lib/mockDb';
 import { isRealAiActive } from '@/lib/gemini';
 import { Database, Sparkles, AlertTriangle, ShieldCheck, Building2 } from 'lucide-react';
 
@@ -55,6 +56,8 @@ export default function WorkspaceLayout({
 
   if (!currentUser) return null;
 
+  const isTenantSubdomain = getTenantFromHostname().isSubdomain;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans" dir="rtl">
       {/* 1. Right Sidebar */}
@@ -76,8 +79,8 @@ export default function WorkspaceLayout({
 
           {/* Tenant Selector & Cloud Status Indicators */}
           <div className="flex items-center gap-4">
-            {/* Tenant switcher dropdown for super_admin */}
-            {currentUser.role === 'super_admin' && organizations.length > 0 && (
+            {/* Tenant switcher dropdown for super_admin (Only show if NOT locked to a subdomain) */}
+            {currentUser.role === 'super_admin' && organizations.length > 0 && !isTenantSubdomain && (
               <div className="flex items-center gap-2 border border-brand-gold/30 bg-brand-gold/10 px-3 py-1.5 rounded-lg shadow-sm">
                 <Building2 className="w-3.5 h-3.5 text-brand-gold" />
                 <span className="text-xs font-extrabold text-slate-850">المنصة النشطة:</span>

@@ -199,7 +199,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center justify-center mb-6">
           <Logo showText={false} className="scale-125 mb-4" />
           <h2 className="text-xl font-extrabold text-white text-center">
-            نظام إدارة الاستشارات القانونية والضريبية الذكي
+            المنصة الذكية لإدارة مكاتب المحاسبة والاستشارات الضريبية
           </h2>
           <p className="mt-1.5 text-xs text-brand-gold font-semibold tracking-wide text-center">
             {tenantName}

@@ -90,7 +90,8 @@ const defaultOrganizations: Organization[] = [
 ];
 
 const defaultProfiles: Profile[] = [
-  { id: 'usr-super', name: 'أ. خالد سند', email: 'admin@sanadfinance.com', role: 'super_admin', avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=105&fit=crop&crop=faces' },
+  // Super Admin updated to Abdelrahman Amr
+  { id: 'usr-super', name: 'أ. عبد الرحمن عمرو', email: 'abdelrahman@sanadfinance.com', role: 'super_admin', avatar_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=faces' },
   { id: 'usr-admin', name: 'أ. سامح سمير', email: 'admin@abteam.com', role: 'admin', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=faces' },
   { id: 'usr-cons', name: 'مستشار أحمد رأفت', email: 'consultant@abteam.com', role: 'consultant', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=faces' },
   { id: 'usr-staff', name: 'مهى علي', email: 'staff@abteam.com', role: 'staff', organization_id: '11111111-1111-1111-1111-111111111111', avatar_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&crop=faces' }
@@ -222,7 +223,7 @@ export const mockDb = {
 
   // Users
   getCurrentUser: (): Profile => {
-    const defaultUser = defaultProfiles[0]; // Super Admin by default to showcase Sanad Finance
+    const defaultUser = defaultProfiles[0]; // Super Admin (Abdelrahman Amr) by default
     return getFromStorage<Profile>('ab_current_user', defaultUser);
   },
 

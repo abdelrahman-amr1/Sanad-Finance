@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { db, Profile } from '@/lib/supabase';
-import { getTenantFromHostname } from '@/lib/mockDb';
+import { getTenantFromHostname, getSlugFromHostname } from '@/lib/mockDb';
 import { Shield, Lock, Mail, Users, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -15,8 +15,32 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [resolvingTenant, setResolvingTenant] = useState(true);
 
   useEffect(() => {
+    const resolveTenant = async () => {
+      const slug = getSlugFromHostname();
+      if (slug) {
+        try {
+          const org = await db.getOrganizationBySlug(slug);
+          if (org) {
+            localStorage.setItem('ab_active_org_id', org.id);
+            localStorage.setItem('ab_tenant_org', JSON.stringify(org));
+          }
+        } catch (e) {
+          console.error('Failed to resolve login tenant:', e);
+        }
+      } else {
+        localStorage.removeItem('ab_tenant_org');
+      }
+      setResolvingTenant(false);
+    };
+    resolveTenant();
+  }, []);
+
+  useEffect(() => {
+    if (resolvingTenant) return;
+
     // Check if user already logged in, redirect to dashboard
     const user = db.getCurrentUser();
     if (user && typeof window !== 'undefined' && localStorage.getItem('ab_current_user')) {
@@ -33,7 +57,7 @@ export default function LoginPage() {
     }
     
     setProfiles(allProfiles);
-  }, [router]);
+  }, [resolvingTenant, router]);
 
   const handleSimulateLogin = (profile: Profile) => {
     setLoading(true);
@@ -67,6 +91,15 @@ export default function LoginPage() {
       setError('الحساب غير مسجل في النظام. يرجى استخدام حساب المحاكاة بالأسفل للتجربة الفورية.');
     }
   };
+
+  if (resolvingTenant) return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center" dir="rtl">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-slate-800 border-t-brand-gold rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-slate-400 font-semibold text-sm">جاري تحميل المنصة...</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center relative overflow-hidden font-sans" dir="rtl">

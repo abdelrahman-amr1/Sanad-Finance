@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { db, isSupabaseConfigured, Profile, Organization } from '@/lib/supabase';
-import { getTenantFromHostname } from '@/lib/mockDb';
+import { getTenantFromHostname, getSlugFromHostname } from '@/lib/mockDb';
 import { isRealAiActive } from '@/lib/gemini';
 import { Database, Sparkles, AlertTriangle, ShieldCheck, Building2 } from 'lucide-react';
 
@@ -15,11 +15,36 @@ export default function WorkspaceLayout({
 }) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
+  const [resolvingTenant, setResolvingTenant] = useState(true);
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [activeOrgId, setActiveOrgId] = useState<string>('');
 
   useEffect(() => {
+    const resolveTenant = async () => {
+      const slug = getSlugFromHostname();
+      if (slug) {
+        try {
+          const org = await db.getOrganizationBySlug(slug);
+          if (org) {
+            localStorage.setItem('ab_active_org_id', org.id);
+            localStorage.setItem('ab_tenant_org', JSON.stringify(org));
+          }
+        } catch (e) {
+          console.error('Failed to resolve tenant organization:', e);
+        }
+      } else {
+        localStorage.removeItem('ab_tenant_org');
+      }
+      setResolvingTenant(false);
+    };
+
+    resolveTenant();
+  }, []);
+
+  useEffect(() => {
+    if (resolvingTenant) return;
+
     const user = db.getCurrentUser();
     if (!user) {
       router.push('/');
@@ -35,7 +60,7 @@ export default function WorkspaceLayout({
       }
     }
     setLoading(false);
-  }, [router]);
+  }, [resolvingTenant, router]);
 
   const handleOrgChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const orgId = e.target.value;
@@ -45,11 +70,11 @@ export default function WorkspaceLayout({
     window.location.reload();
   };
 
-  if (loading) return (
+  if (resolvingTenant || loading) return (
     <div className="h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
       <div className="text-center">
         <div className="w-12 h-12 border-4 border-slate-900 border-t-brand-gold rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-600 font-semibold text-sm">جاري تحميل بيئة العمل...</p>
+        <p className="text-slate-600 font-semibold text-sm">جاري تحديد نطاق المكتب الاستشاري...</p>
       </div>
     </div>
   );

@@ -186,26 +186,72 @@ const saveToStorage = <T>(key: string, value: T) => {
   }
 };
 
+// Client-side domain parser helper to extract the subdomain/slug dynamically
+export const getSlugFromHostname = (): string | null => {
+  if (!isClient) return null;
+  const hostname = window.location.hostname;
+  
+  // Exclude main application domains and localhost roots
+  if (
+    hostname === 'localhost' || 
+    hostname === '127.0.0.1' || 
+    hostname === 'sanadfinance.vercel.app' || 
+    hostname === 'sanadfinance.com'
+  ) {
+    return null;
+  }
+  
+  // 1. If Vercel default deployment domain (e.g. sameh-samir-ab-team-sanadfinance.vercel.app)
+  if (hostname.endsWith('-sanadfinance.vercel.app')) {
+    return hostname.replace('-sanadfinance.vercel.app', '');
+  }
+  
+  // 2. If custom domain subdomain (e.g. sameh-samir-ab-team.sanadfinance.com)
+  if (hostname.endsWith('.sanadfinance.com')) {
+    return hostname.replace('.sanadfinance.com', '');
+  }
+  
+  // 3. If local localhost subdomain (e.g. sameh-samir-ab-team.localhost)
+  if (hostname.endsWith('.localhost')) {
+    return hostname.replace('.localhost', '');
+  }
+  
+  // Fallback: If hostname contains a dot and doesn't match above, try to split
+  const parts = hostname.split('.');
+  if (parts.length > 2 && parts[0] !== 'www') {
+    return parts[0];
+  }
+  
+  return null;
+};
+
 // Client-side domain routing helper to isolate tenants by domain name
 export const getTenantFromHostname = (): { isSubdomain: boolean; orgId?: string; slug?: string } => {
   if (!isClient) {
     return { isSubdomain: false };
   }
   
-  const hostname = window.location.hostname;
-  
-  // Lock tenant context if the user opens the specific tenant domain
-  if (hostname.includes('sameh-samir-a-b-team') || hostname.includes('sameh-samir-ab-team')) {
+  const slug = getSlugFromHostname();
+  if (slug) {
+    // Check if we have the organization cached in localStorage (avoids async queries blocking)
+    const cached = localStorage.getItem('ab_tenant_org');
+    if (cached) {
+      try {
+        const org = JSON.parse(cached);
+        if (org && org.slug === slug) {
+          return {
+            isSubdomain: true,
+            orgId: org.id,
+            slug: org.slug
+          };
+        }
+      } catch (e) {}
+    }
+    
+    // Fallback: If not cached yet, return subdomain info (id will be updated by page useEffect)
     return {
       isSubdomain: true,
-      orgId: '11111111-1111-1111-1111-111111111111',
-      slug: 'sameh-samir-ab-team'
-    };
-  } else if (hostname.includes('al-nour-tax') || hostname.includes('alnour')) {
-    return {
-      isSubdomain: true,
-      orgId: '22222222-2222-2222-2222-222222222222',
-      slug: 'al-nour-tax'
+      slug: slug
     };
   }
   
@@ -216,6 +262,11 @@ export const mockDb = {
   // Organizations
   getOrganizations: (): Organization[] => {
     return getFromStorage<Organization[]>('ab_organizations', defaultOrganizations);
+  },
+
+  getOrganizationBySlug: (slug: string): Organization | null => {
+    const orgs = mockDb.getOrganizations();
+    return orgs.find(o => o.slug === slug) || null;
   },
 
   addOrganization: (org: Omit<Organization, 'id' | 'created_at' | 'status'>): Organization => {
@@ -387,7 +438,7 @@ export const mockDb = {
     const client = mockDb.getClients().find(c => c.id === committees[idx].client_id);
     let actionDesc = `تعديل بيانات ملف لجنة للعميل: ${client?.name}`;
     if (updatedData.stage && updatedData.stage !== oldStage) {
-      actionDesc = `تحويل مرحلة اللجنة للعميل ${client?.name} من [${oldStage}] إلى [${updatedData.stage}]`;
+      actionDesc = `تحويل مرحلة لجنة للعميل ${client?.name} من [${oldStage}] إلى [${updatedData.stage}]`;
     }
     
     mockDb.addAuditLog('تحديث ملف اللجنة', actionDesc);

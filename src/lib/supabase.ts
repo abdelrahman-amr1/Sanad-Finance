@@ -76,6 +76,22 @@ export const db = {
     return mockDb.updateOrganization(id, updatedData);
   },
 
+  getOrganizationBySlug: async (slug: string): Promise<Organization | null> => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle();
+      if (error) {
+        console.error('Supabase getOrganizationBySlug error, falling back to mock:', error);
+        return mockDb.getOrganizationBySlug(slug);
+      }
+      return data;
+    }
+    return mockDb.getOrganizationBySlug(slug);
+  },
+
   getActiveOrgId: (): string => {
     return mockDb.getActiveOrgId();
   },

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { db, Organization } from '@/lib/supabase';
 import { Scale, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -11,47 +11,42 @@ interface PageProps {
 
 export default function LawyerOfficePage({ params }: PageProps) {
   const router = useRouter();
-  const [subdomain, setSubdomain] = useState<string>('');
+  
+  // Unwrap params using React 19's standard `use` hook
+  const { subdomain } = use(params);
+  
   const [org, setOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    params.then(unwrapped => {
-      setSubdomain(unwrapped.subdomain);
-    }).catch(err => {
-      console.error("Failed to unwrap page params:", err);
-      setLoading(false);
-    });
-  }, [params]);
-
-  useEffect(() => {
     if (!subdomain) return;
-    fetchOfficeProfile();
-  }, [subdomain]);
 
-  const fetchOfficeProfile = async () => {
-    try {
-      const data = await db.getOrganizationBySlug(subdomain);
-      if (data) {
-        setOrg(data);
-        
-        // Auto-configure the active tenant in browser context
-        localStorage.setItem('ab_active_org_id', data.id);
-        localStorage.setItem('ab_tenant_org', JSON.stringify(data));
-        
-        // Instantly redirect to the isolated login screen
-        router.replace('/');
-      } else {
+    const fetchOfficeProfile = async () => {
+      try {
+        const data = await db.getOrganizationBySlug(subdomain);
+        if (data) {
+          setOrg(data);
+          
+          // Auto-configure the active tenant in browser context
+          localStorage.setItem('ab_active_org_id', data.id);
+          localStorage.setItem('ab_tenant_org', JSON.stringify(data));
+          
+          // Instantly redirect to the isolated login screen
+          router.replace('/');
+        } else {
+          setNotFound(true);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Error fetching organization:", e);
         setNotFound(true);
         setLoading(false);
       }
-    } catch (e) {
-      console.error("Error fetching organization:", e);
-      setNotFound(true);
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchOfficeProfile();
+  }, [subdomain, router]);
 
   if (loading) {
     return (

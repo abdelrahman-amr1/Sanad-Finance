@@ -84,7 +84,7 @@ export const Sidebar: React.FC = () => {
       name: 'إدارة المستخدمين',
       href: '/users',
       icon: Users,
-      roles: ['admin']
+      roles: ['admin', 'super_admin']
     },
     {
       name: 'إدارة المنصات',

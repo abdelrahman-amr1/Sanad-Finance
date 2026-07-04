@@ -19,7 +19,8 @@ import {
   ShieldCheck, 
   RefreshCw,
   Search,
-  UserCheck
+  UserCheck,
+  UserPlus
 } from 'lucide-react';
 import { db, Profile, Organization, TaxLaw } from '@/lib/supabase';
 import confetti from 'canvas-confetti';
@@ -56,6 +57,16 @@ export default function SuperAdminDashboard() {
   const [lawContent, setLawContent] = useState('');
   const [lawFormLoading, setLawFormLoading] = useState(false);
   const [lawFormError, setLawFormError] = useState('');
+
+  // User Form State
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('ABTeam2026!');
+  const [newUserRole, setNewUserRole] = useState('admin');
+  const [newUserOrgId, setNewUserOrgId] = useState('');
+  const [userFormLoading, setUserFormLoading] = useState(false);
+  const [userFormError, setUserFormError] = useState('');
 
   // Search/Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,6 +224,54 @@ export default function SuperAdminDashboard() {
       setLawFormError(err.message || 'فشل إضافة المادة القانونية');
     } finally {
       setLawFormLoading(false);
+    }
+  };
+
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName || !newUserEmail || !newUserOrgId || !newUserPassword) {
+      setUserFormError('يرجى ملء جميع الحقول المطلوبة للمستخدم');
+      return;
+    }
+
+    setUserFormLoading(true);
+    setUserFormError('');
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newUserEmail,
+          name: newUserName,
+          role: newUserRole,
+          organizationId: newUserOrgId,
+          password: newUserPassword
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'فشل إنشاء المستخدم في قاعدة البيانات');
+      }
+
+      confetti({
+        particleCount: 50,
+        spread: 45,
+        colors: ['#C5A880', '#0F172A']
+      });
+
+      setIsUserModalOpen(false);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('ABTeam2026!');
+      setNewUserRole('admin');
+      setNewUserOrgId('');
+      await loadAllData();
+    } catch (err: any) {
+      setUserFormError(err.message || 'فشل تسجيل حساب الموظف');
+    } finally {
+      setUserFormLoading(false);
     }
   };
 
@@ -527,18 +586,28 @@ export default function SuperAdminDashboard() {
               {activeTab === 'users' && (
                 <div className="space-y-6">
                   
-                  {/* Search bar */}
-                  <div className="relative w-full sm:w-80">
-                    <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500">
-                      <Search className="w-4 h-4" />
-                    </span>
-                    <input 
-                      type="text" 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="ابحث عن موظف بالاسم أو البريد..."
-                      className="w-full pr-9 pl-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs placeholder-slate-500 text-white focus:outline-none focus:border-brand-gold"
-                    />
+                  {/* Search and Action Bar */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="relative w-full sm:w-80">
+                      <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500">
+                        <Search className="w-4 h-4" />
+                      </span>
+                      <input 
+                        type="text" 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="ابحث عن موظف بالاسم أو البريد..."
+                        className="w-full pr-9 pl-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs placeholder-slate-500 text-white focus:outline-none focus:border-brand-gold"
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => setIsUserModalOpen(true)}
+                      className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-gold text-slate-950 rounded-lg text-xs font-bold hover:bg-brand-gold-hover transition-all"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      إضافة مستخدم جديد للمنصة
+                    </button>
                   </div>
 
                   {/* Users Table */}
@@ -854,6 +923,103 @@ export default function SuperAdminDashboard() {
                 className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-bold text-slate-950 bg-brand-gold hover:bg-brand-gold-hover transition-all shadow-md disabled:opacity-50"
               >
                 {lawFormLoading ? 'جاري الحفظ والتدريب...' : 'إدراج القانون سحابياً'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for adding User */}
+      {isUserModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 w-full max-w-md animate-in zoom-in-95 duration-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+              <h3 className="text-sm font-extrabold text-white">إضافة مستخدم جديد للنظام وتعيينه لمكتب</h3>
+              <button 
+                onClick={() => setIsUserModalOpen(false)}
+                className="text-slate-400 hover:text-white text-xs font-bold"
+              >
+                إغلاق [X]
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveUser} className="p-5 space-y-4 text-xs text-right" dir="rtl">
+              {userFormError && (
+                <div className="bg-red-950/40 border border-red-900/50 text-red-400 p-2.5 rounded text-[11px] font-bold text-center">
+                  {userFormError}
+                </div>
+              )}
+
+              <div>
+                <label className="font-bold text-slate-350 block mb-1">اسم الموظف*</label>
+                <input 
+                  type="text" 
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  placeholder="مثال: أحمد عبد الله"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-brand-gold px-3 py-2 rounded-lg text-xs text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-350 block mb-1">البريد الإلكتروني*</label>
+                <input 
+                  type="email" 
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-brand-gold px-3 py-2 rounded-lg text-xs text-white text-left font-mono"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold text-slate-350 block mb-1">صلاحية الدور*</label>
+                  <select
+                    value={newUserRole}
+                    onChange={(e) => setNewUserRole(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-brand-gold px-3 py-2 rounded-lg text-xs text-white font-bold"
+                  >
+                    <option value="admin">مدير مكتب (Admin)</option>
+                    <option value="consultant">مستشار ضريبي (Consultant)</option>
+                    <option value="staff">موظف إداري (Staff)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-350 block mb-1">كلمة المرور الافتراضية*</label>
+                  <input 
+                    type="text" 
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-brand-gold px-3 py-2 rounded-lg text-xs text-white text-center font-mono font-bold"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-350 block mb-1">المكتب التابع له*</label>
+                <select
+                  value={newUserOrgId}
+                  onChange={(e) => setNewUserOrgId(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-brand-gold px-3 py-2 rounded-lg text-xs text-white font-bold"
+                  required
+                >
+                  <option value="">-- اختر المكتب الاستشاري --</option>
+                  {organizations.map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={userFormLoading}
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-bold text-slate-950 bg-brand-gold hover:bg-brand-gold-hover transition-all shadow-md disabled:opacity-50"
+              >
+                {userFormLoading ? 'جاري تسجيل المستخدم سحابياً...' : 'تسجيل وتفعيل المستخدم'}
               </button>
             </form>
           </div>

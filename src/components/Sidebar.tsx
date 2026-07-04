@@ -18,7 +18,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { Logo } from './Logo';
-import { db, Profile } from '@/lib/supabase';
+import { db, Profile, isSupabaseConfigured } from '@/lib/supabase';
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
@@ -132,90 +132,122 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* User Simulation & Settings footer */}
+      {/* User Session / Settings footer */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/40 relative">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-semibold text-brand-gold uppercase tracking-wider flex items-center gap-1">
-            <Shield className="w-3 h-3 text-brand-gold" />
-            محاكاة صلاحية المستخدم
-          </span>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => db.resetMockDb()}
-              title="إعادة تهيئة البيانات الافتراضية"
-              className="text-slate-400 hover:text-white transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-            <button 
-              onClick={handleLogout}
-              title="تسجيل الخروج"
-              className="text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1 text-[10px] font-bold"
-            >
-              <LogOut className="w-3 h-3 text-red-500" />
-              <span>خروج</span>
-            </button>
-          </div>
-        </div>
+        {!isSupabaseConfigured ? (
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-semibold text-brand-gold uppercase tracking-wider flex items-center gap-1">
+                <Shield className="w-3 h-3 text-brand-gold" />
+                محاكاة صلاحية المستخدم
+              </span>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => db.resetMockDb()}
+                  title="إعادة تهيئة البيانات الافتراضية"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  title="تسجيل الخروج"
+                  className="text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1 text-[10px] font-bold"
+                >
+                  <LogOut className="w-3 h-3 text-red-500" />
+                  <span>خروج</span>
+                </button>
+              </div>
+            </div>
 
-        {/* Active User Card with Switcher Toggle */}
-        <div className="relative">
-          <button
-            onClick={() => setShowRoleSelector(!showRoleSelector)}
-            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/80 text-right transition-all border border-slate-800 hover:border-brand-gold/40"
-          >
-            {/* Avatar Placeholder */}
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-brand-gold/10 border border-brand-gold/30 flex-shrink-0 flex items-center justify-center font-bold text-xs text-brand-gold">
-              {currentUser.avatar_url ? (
-                <img src={currentUser.avatar_url} alt={currentUser.name} className="w-full h-full object-cover" />
-              ) : (
-                currentUser.name[0]
+            {/* Active User Card with Switcher Toggle */}
+            <div className="relative">
+              <button
+                onClick={() => setShowRoleSelector(!showRoleSelector)}
+                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/80 text-right transition-all border border-slate-800 hover:border-brand-gold/40"
+              >
+                {/* Avatar Placeholder */}
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-brand-gold/10 border border-brand-gold/30 flex-shrink-0 flex items-center justify-center font-bold text-xs text-brand-gold">
+                  {currentUser.avatar_url ? (
+                    <img src={currentUser.avatar_url} alt={currentUser.name} className="w-full h-full object-cover" />
+                  ) : (
+                    currentUser.name[0]
+                  )}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">{currentUser.name}</p>
+                  <p className="text-[10px] text-slate-400 truncate">
+                    {currentUser.role === 'super_admin' ? 'المدير العام (سوبر أدمن)' : currentUser.role === 'admin' ? 'مدير المكتب' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
+                  </p>
+                </div>
+                
+                <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              </button>
+
+              {/* Role Selection Dropdown Menu */}
+              {showRoleSelector && (
+                <div className="absolute bottom-full right-0 left-0 mb-2 bg-slate-850 border border-slate-750 rounded-lg shadow-2xl overflow-hidden z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <div className="p-2 text-[10px] font-medium text-slate-400 bg-slate-900 border-b border-slate-750">
+                    اختر الحساب لمحاكاة الأدوار:
+                  </div>
+                  <div className="p-1 space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
+                    {profiles.map((p) => {
+                      const isSelected = p.id === currentUser.id;
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => handleRoleChange(p)}
+                          className={`w-full flex items-center gap-2 p-2 rounded text-right text-xs transition-colors ${
+                            isSelected 
+                              ? 'bg-brand-gold/10 text-brand-gold border-r-2 border-brand-gold' 
+                              : 'text-slate-300 hover:bg-slate-800'
+                          }`}
+                        >
+                          <UserCheck className={`w-3.5 h-3.5 ${isSelected ? 'text-brand-gold' : 'text-slate-400'}`} />
+                          <div className="flex-1">
+                            <div className="font-semibold">{p.name}</div>
+                            <div className="text-[10px] opacity-70">
+                              {p.role === 'super_admin' ? 'سوبر أدمن' : p.role === 'admin' ? 'مدير مكتب' : p.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
-            
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white truncate">{currentUser.name}</p>
-              <p className="text-[10px] text-slate-400 truncate">
-                {currentUser.role === 'super_admin' ? 'المدير العام (سوبر أدمن)' : currentUser.role === 'admin' ? 'مدير المكتب' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
-              </p>
-            </div>
-            
-            <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-          </button>
-
-          {/* Role Selection Dropdown Menu */}
-          {showRoleSelector && (
-            <div className="absolute bottom-full right-0 left-0 mb-2 bg-slate-850 border border-slate-750 rounded-lg shadow-2xl overflow-hidden z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <div className="p-2 text-[10px] font-medium text-slate-400 bg-slate-900 border-b border-slate-750">
-                اختر الحساب لمحاكاة الأدوار:
+          </>
+        ) : (
+          <div className="space-y-3">
+            {/* Live Profile Info */}
+            <div className="w-full flex items-center gap-3 p-2 rounded-lg border border-slate-800 bg-slate-900/40 text-right">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-brand-gold/10 border border-brand-gold/30 flex-shrink-0 flex items-center justify-center font-bold text-xs text-brand-gold">
+                {currentUser.avatar_url ? (
+                  <img src={currentUser.avatar_url} alt={currentUser.name} className="w-full h-full object-cover" />
+                ) : (
+                  currentUser.name[0]
+                )}
               </div>
-              <div className="p-1 space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
-                {profiles.map((p) => {
-                  const isSelected = p.id === currentUser.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => handleRoleChange(p)}
-                      className={`w-full flex items-center gap-2 p-2 rounded text-right text-xs transition-colors ${
-                        isSelected 
-                          ? 'bg-brand-gold/10 text-brand-gold border-r-2 border-brand-gold' 
-                          : 'text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      <UserCheck className={`w-3.5 h-3.5 ${isSelected ? 'text-brand-gold' : 'text-slate-400'}`} />
-                      <div className="flex-1">
-                        <div className="font-semibold">{p.name}</div>
-                        <div className="text-[10px] opacity-70">
-                          {p.role === 'super_admin' ? 'سوبر أدمن' : p.role === 'admin' ? 'مدير مكتب' : p.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-white truncate">{currentUser.name}</p>
+                <p className="text-[10px] text-slate-400 truncate">
+                  {currentUser.role === 'super_admin' ? 'المدير العام (سوبر أدمن)' : currentUser.role === 'admin' ? 'مدير المكتب' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
+                </p>
               </div>
             </div>
-          )}
-        </div>
+            
+            {/* Standard Logout Button for Live Mode */}
+            <button
+              onClick={handleLogout}
+              className="w-full flex justify-center items-center gap-1.5 py-2 px-3 border border-red-900/30 hover:border-red-800/80 rounded-lg text-xs font-bold text-red-400 bg-red-950/20 hover:bg-red-950/40 transition-all"
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-500" />
+              <span>تسجيل الخروج من الحساب</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

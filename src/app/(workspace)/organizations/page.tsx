@@ -29,6 +29,7 @@ export default function OrganizationsPage() {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
+  const [maxUsers, setMaxUsers] = useState<number>(5);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -56,6 +57,7 @@ export default function OrganizationsPage() {
     setAddress('');
     setPhone('');
     setDescription('');
+    setMaxUsers(5);
     setFormError('');
     setIsModalOpen(true);
   };
@@ -67,6 +69,7 @@ export default function OrganizationsPage() {
     setAddress(org.address || '');
     setPhone(org.phone || '');
     setDescription(org.description || '');
+    setMaxUsers(org.max_users || 5);
     setFormError('');
     setIsModalOpen(true);
   };
@@ -95,7 +98,8 @@ export default function OrganizationsPage() {
           slug,
           address: address || undefined,
           phone: phone || undefined,
-          description: description || undefined
+          description: description || undefined,
+          max_users: Number(maxUsers)
         });
       } else {
         // Create Mode
@@ -104,7 +108,8 @@ export default function OrganizationsPage() {
           slug, 
           address: address || undefined, 
           phone: phone || undefined, 
-          description: description || undefined 
+          description: description || undefined,
+          max_users: Number(maxUsers)
         });
       }
       
@@ -252,7 +257,9 @@ export default function OrganizationsPage() {
                   <Calendar className="w-3.5 h-3.5" />
                   مسجل: {new Date(org.created_at).toLocaleDateString('ar-EG')}
                 </span>
-                <span className="font-mono text-[9px]">ID: {org.id.split('-')[0]}...</span>
+                <span className="font-extrabold text-slate-500">
+                  الحد الأقصى: {org.max_users || 5} مستخدمين
+                </span>
               </div>
             </div>
           ))}
@@ -325,15 +332,28 @@ export default function OrganizationsPage() {
                 />
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">هاتف التواصل للمكتب</label>
-                <input 
-                  type="text" 
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="مثال: 02-33445566"
-                  className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-mono text-left text-right"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">الحد الأقصى للمستخدمين*</label>
+                  <input 
+                    type="number" 
+                    value={maxUsers}
+                    onChange={(e) => setMaxUsers(Number(e.target.value))}
+                    min={1}
+                    className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-mono text-center"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">هاتف التواصل للمكتب</label>
+                  <input 
+                    type="text" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="مثال: 02-33445566"
+                    className="w-full border border-slate-200 px-3 py-2 rounded-lg text-xs font-mono text-left text-right"
+                  />
+                </div>
               </div>
 
               <div>

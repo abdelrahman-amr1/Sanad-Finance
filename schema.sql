@@ -29,6 +29,7 @@ CREATE TABLE public.organizations (
     address TEXT, -- عنوان المكتب
     phone TEXT, -- هاتف المكتب
     description TEXT, -- تفاصيل/نبذة عن المكتب
+    max_users INTEGER DEFAULT 5, -- الحد الأقصى للمستخدمين للمكتب
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 

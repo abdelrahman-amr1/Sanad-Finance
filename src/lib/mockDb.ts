@@ -9,6 +9,7 @@ export interface Organization {
   address?: string; // عنوان المكتب
   phone?: string; // هاتف المكتب
   description?: string; // تفاصيل ونبذة عن المكتب
+  max_users: number; // الحد الأقصى للمستخدمين للمكتب
   created_at: string;
 }
 
@@ -96,6 +97,7 @@ const defaultOrganizations: Organization[] = [
     address: 'شارع البطل أحمد عبد العزيز، المهندسين، الجيزة',
     phone: '02-33445566',
     description: 'المكتب الاستشاري الرئيسي للمجموعة، متخصص في لجان فحص القيمة المضافة وضريبة الدخل لكبرى الشركات المساهمة.',
+    max_users: 5,
     created_at: new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString() 
   },
   { 
@@ -106,6 +108,7 @@ const defaultOrganizations: Organization[] = [
     address: 'شارع فؤاد، وسط البلد، الإسكندرية',
     phone: '03-4889900',
     description: 'مكتب استشاري متخصص في المنازعات الجمركية وضرائب المهن الحرة لقطاع الاستيراد والتصدير بالإسكندرية.',
+    max_users: 5,
     created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString() 
   }
 ];
@@ -517,7 +520,18 @@ export const mockDb = {
 
   // Laws
   getLaws: (): TaxLaw[] => {
-    return defaultLaws;
+    return getFromStorage<TaxLaw[]>('ab_tax_laws', defaultLaws);
+  },
+
+  addTaxLaw: (law: Omit<TaxLaw, 'id'>): TaxLaw => {
+    const laws = mockDb.getLaws();
+    const newLaw: TaxLaw = {
+      ...law,
+      id: `law-${Date.now()}`
+    };
+    laws.push(newLaw);
+    saveToStorage('ab_tax_laws', laws);
+    return newLaw;
   },
 
   searchLaws: (query: string): TaxLaw[] => {
@@ -558,6 +572,7 @@ export const mockDb = {
       localStorage.removeItem('ab_tasks');
       localStorage.removeItem('ab_audit_logs');
       localStorage.removeItem('ab_mock_profiles');
+      localStorage.removeItem('ab_tax_laws');
       window.location.reload();
     }
   }

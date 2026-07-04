@@ -29,11 +29,26 @@ export default function UsersPage() {
   const [password, setPassword] = useState('ABTeam2026!');
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
+  const [orgMaxUsers, setOrgMaxUsers] = useState<number>(5);
 
   useEffect(() => {
     setCurrentUser(db.getCurrentUser());
     fetchUsers();
+    fetchOrgLimit();
   }, []);
+
+  const fetchOrgLimit = async () => {
+    try {
+      const activeOrgId = db.getActiveOrgId();
+      const orgs = await db.getOrganizations();
+      const match = orgs.find(o => o.id === activeOrgId);
+      if (match) {
+        setOrgMaxUsers(match.max_users || 5);
+      }
+    } catch (e) {
+      console.error('Failed to load org limit:', e);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -77,6 +92,14 @@ export default function UsersPage() {
     try {
       const activeOrgId = db.getActiveOrgId();
       const targetOrgId = currentUser?.role === 'super_admin' ? activeOrgId : currentUser?.organization_id;
+
+      // Client-side user limit check (exclude super_admins from target limits)
+      const currentOrgUsersCount = users.filter(u => u.organization_id === targetOrgId && u.role !== 'super_admin').length;
+      if (currentOrgUsersCount >= orgMaxUsers) {
+        setFormError(`عذراً، لقد تم الوصول للحد الأقصى للمستخدمين المسموح بهم لهذا المكتب (${orgMaxUsers} مستخدمين). يرجى الترقية لإضافة موظفين.`);
+        setFormLoading(false);
+        return;
+      }
 
       if (isSupabaseConfigured) {
         const response = await fetch('/api/admin/users', {
@@ -246,6 +269,14 @@ export default function UsersPage() {
           إضافة موظف/مستخدم جديد
         </button>
       </div>
+
+      {/* Quota Warning Banner */}
+      {users.filter(u => u.role !== 'super_admin').length >= orgMaxUsers && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-xs text-amber-800 font-bold mb-6 flex items-center justify-between no-print">
+          <span>⚠️ تم الوصول للحد الأقصى للموظفين المتاحين في باقة المكتب الحالي ({orgMaxUsers} مستخدمين). يرجى التواصل مع الإدارة العامة لترقية باقتك.</span>
+          <span className="px-2.5 py-1 bg-amber-100 border border-amber-300 text-amber-900 rounded text-[10px] font-extrabold uppercase">ممتلئ</span>
+        </div>
+      )}
 
       {/* Users table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

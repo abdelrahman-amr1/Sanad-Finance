@@ -65,6 +65,29 @@ export async function POST(req: NextRequest) {
 
     // 1. If real Supabase and Service Role are active
     if (isSupabaseConfigured && isServiceRoleActive && supabaseAdmin) {
+      // Check user limit for this organization first
+      if (organizationId) {
+        const { data: org, error: orgError } = await supabaseAdmin
+          .from('organizations')
+          .select('max_users')
+          .eq('id', organizationId)
+          .single();
+
+        if (!orgError && org) {
+          const maxUsers = org.max_users || 5;
+          const { count, error: countError } = await supabaseAdmin
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('organization_id', organizationId);
+
+          if (!countError && count !== null && count >= maxUsers) {
+            return NextResponse.json({ 
+              error: `عذراً، لقد تم الوصول للحد الأقصى للمستخدمين المسموح بهم لهذا المكتب (${maxUsers} مستخدمين). يرجى التواصل مع الإدارة العامة لترقية الباقة.` 
+            }, { status: 400 });
+          }
+        }
+      }
+
       // Create user inside Supabase Auth
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -116,6 +139,21 @@ export async function POST(req: NextRequest) {
       const storedProfiles = localStorage.getItem('ab_mock_profiles');
       if (storedProfiles) {
         try { profilesList = JSON.parse(storedProfiles); } catch(e) {}
+      }
+    }
+
+    // Check user limit for mock organization
+    if (organizationId) {
+      const orgs = mockDb.getOrganizations();
+      const targetOrg = orgs.find(o => o.id === organizationId);
+      if (targetOrg) {
+        const currentCount = profilesList.filter(p => p.organization_id === organizationId).length;
+        const maxUsers = targetOrg.max_users || 5;
+        if (currentCount >= maxUsers) {
+          return NextResponse.json({
+            error: `عذراً، لقد تم الوصول للحد الأقصى للمستخدمين المسموح بهم لهذا المكتب (${maxUsers} مستخدمين). يرجى التواصل مع الإدارة العامة لترقية الباقة.`
+          }, { status: 400 });
+        }
       }
     }
 

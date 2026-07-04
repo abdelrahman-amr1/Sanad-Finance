@@ -385,6 +385,37 @@ export const db = {
     return mockDb.searchLaws(query);
   },
 
+  getTaxLaws: async (): Promise<TaxLaw[]> => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('tax_laws')
+        .select('*')
+        .order('law_number', { ascending: true });
+      if (error) {
+        console.error('Supabase getTaxLaws error, falling back to mock:', error);
+        return mockDb.getLaws();
+      }
+      return data || [];
+    }
+    return mockDb.getLaws();
+  },
+
+  addTaxLaw: async (law: Omit<TaxLaw, 'id'>): Promise<TaxLaw> => {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('tax_laws')
+        .insert([law])
+        .select()
+        .single();
+      if (error) {
+        console.error('Supabase addTaxLaw error, falling back to mock:', error);
+        return mockDb.addTaxLaw(law);
+      }
+      return data;
+    }
+    return mockDb.addTaxLaw(law);
+  },
+
   resetMockDb: () => {
     mockDb.resetMockDb();
   },

@@ -360,11 +360,12 @@ export const db = {
   searchLaws: async (query: string): Promise<TaxLaw[]> => {
     if (isSupabaseConfigured && supabase) {
       try {
+        const clientKey = typeof window !== 'undefined' ? localStorage.getItem('ab_gemini_api_key') : null;
         // Fetch embeddings for query from API
         const response = await fetch('/api/embeddings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: query })
+          body: JSON.stringify({ text: query, apiKey: clientKey || undefined })
         });
         if (response.ok) {
           const { embedding } = await response.json();
@@ -402,9 +403,25 @@ export const db = {
 
   addTaxLaw: async (law: Omit<TaxLaw, 'id'>): Promise<TaxLaw> => {
     if (isSupabaseConfigured && supabase) {
+      let embedding: number[] | null = null;
+      try {
+        const clientKey = typeof window !== 'undefined' ? localStorage.getItem('ab_gemini_api_key') : null;
+        const response = await fetch('/api/embeddings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: law.content, apiKey: clientKey || undefined })
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          embedding = resData.embedding;
+        }
+      } catch (err) {
+        console.error('Failed to generate embedding for new law:', err);
+      }
+
       const { data, error } = await supabase
         .from('tax_laws')
-        .insert([law])
+        .insert([{ ...law, embedding }])
         .select()
         .single();
       if (error) {

@@ -3,12 +3,12 @@ import { GoogleGenAI } from '@google/genai';
 
 export async function POST(req: NextRequest) {
   try {
-    const { text } = await req.json();
+    const { text, apiKey: customApiKey } = await req.json();
     if (!text) {
       return NextResponse.json({ error: 'Text prompt is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = customApiKey || process.env.GEMINI_API_KEY;
     if (!apiKey) {
       // Return a simulated mock vector for local sandbox testing
       const mockVector = Array.from({ length: 1536 }, () => Math.random() - 0.5);

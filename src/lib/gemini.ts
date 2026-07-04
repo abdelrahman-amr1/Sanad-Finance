@@ -1,13 +1,20 @@
 import { GoogleGenAI } from '@google/genai';
 import { db, TaxLaw, Committee } from './supabase';
 
-const geminiApiKey = process.env.GEMINI_API_KEY || '';
-
-// Initialize Google Gen AI client if key is set
-const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
+const getAiClient = () => {
+  let clientApiKey = '';
+  if (typeof window !== 'undefined') {
+    clientApiKey = localStorage.getItem('ab_gemini_api_key') || '';
+  }
+  const key = clientApiKey || process.env.GEMINI_API_KEY || '';
+  if (!key) return null;
+  return new GoogleGenAI({ apiKey: key });
+};
 
 // Helper to determine if real AI is active
-export const isRealAiActive = !!ai;
+export const isRealAiActive = (): boolean => {
+  return !!getAiClient();
+};
 
 export interface RAGResponse {
   answer: string;
@@ -47,6 +54,7 @@ ${contextText}
 4. حافظ على تنسيق رائع ومقروء للملف باستخدام العناوين والنقاط.
 `;
 
+    const ai = getAiClient();
     if (ai) {
       try {
         const response = await ai.models.generateContent({
@@ -115,6 +123,7 @@ ${contextText}
 
     const systemPrompt = `أنت الخبير القانوني الأول ورئيس لجان الطعن لشركة "Sameh Samir - A&B team". صغ تقريراً فنياً بأسلوب محترف باللغة العربية.`;
 
+    const ai = getAiClient();
     if (ai) {
       try {
         const response = await ai.models.generateContent({
@@ -204,6 +213,7 @@ ${contextText}
 4. استخدم صياغة فخمة، رسمية خالية من الأخطاء اللغوية.
 `;
 
+    const ai = getAiClient();
     if (ai) {
       try {
         const response = await ai.models.generateContent({

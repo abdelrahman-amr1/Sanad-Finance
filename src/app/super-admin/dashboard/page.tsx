@@ -34,7 +34,7 @@ export default function SuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'users' | 'laws'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'organizations' | 'users' | 'laws' | 'settings'>('overview');
 
   // Modals & Forms State
   const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
@@ -58,6 +58,14 @@ export default function SuperAdminDashboard() {
   const [lawFormLoading, setLawFormLoading] = useState(false);
   const [lawFormError, setLawFormError] = useState('');
 
+  // PDF Book Uploader State
+  const [pdfProcessing, setPdfProcessing] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
+  const [pdfStep, setPdfStep] = useState('');
+
+  // Gemini key state
+  const [geminiKeyInput, setGeminiKeyInput] = useState('');
+
   // User Form State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [newUserName, setNewUserName] = useState('');
@@ -79,6 +87,10 @@ export default function SuperAdminDashboard() {
     }
     setCurrentUser(user);
     loadAllData();
+
+    if (typeof window !== 'undefined') {
+      setGeminiKeyInput(localStorage.getItem('ab_gemini_api_key') || '');
+    }
   }, [router]);
 
   const loadAllData = async () => {
@@ -227,6 +239,116 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  const handleSaveGeminiKey = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ab_gemini_api_key', geminiKeyInput);
+      confetti({
+        particleCount: 40,
+        spread: 40,
+        colors: ['#C5A880', '#0F172A']
+      });
+      alert('تم حفظ مفتاح Gemini API بنجاح في المتصفح!');
+    }
+  };
+
+  const loadPdfJs = (): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === 'undefined') return reject(new Error('Window object not found'));
+      if ((window as any).pdfjsLib) {
+        return resolve((window as any).pdfjsLib);
+      }
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js';
+      script.onload = () => {
+        const pdfjs = (window as any).pdfjsLib;
+        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        resolve(pdfjs);
+      };
+      script.onerror = () => reject(new Error('Failed to load PDF.js CDN library'));
+      document.head.appendChild(script);
+    });
+  };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const lawNum = prompt('أدخل رقم القانون المرفوع (مثال: 91):', '91') || 'معدل';
+    const lawYr = prompt('أدخل سنة إصدار القانون (مثال: 2005):', '2005') || '2026';
+    const lawTp = prompt('أدخل نوع القانون/الكتاب (مثال: ضريبة الدخل):', 'ضريبة الدخل') || 'كتاب ضريبي مستقل';
+
+    setPdfProcessing(true);
+    setPdfProgress(10);
+    setPdfStep('جاري تحميل مكتبة قراءة ملفات الـ PDF سحابياً...');
+
+    try {
+      const pdfjs = await loadPdfJs();
+      setPdfProgress(30);
+      setPdfStep('جاري قراءة بنية المستند واستخراج الصفحات...');
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      const numPages = pdf.numPages;
+
+      setPdfProgress(50);
+      setPdfStep(`جاري معالجة واستخراج النصوص من عدد ${numPages} صفحة...`);
+
+      let accumulatedText = '';
+      for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        accumulatedText += `\n[صفحة ${i}]\n` + pageText;
+      }
+
+      setPdfProgress(75);
+      setPdfStep('جاري تقسيم نصوص الكتاب إلى مواد ضريبية وفهرستها...');
+
+      const pages = accumulatedText.split('\n[صفحة ');
+      const lawChunks: Omit<TaxLaw, 'id'>[] = [];
+
+      pages.forEach((pageData, index) => {
+        if (!pageData.trim()) return;
+        const cleanContent = pageData.replace(/^\d+\]\n/, '').trim();
+        if (cleanContent.length < 50) return;
+
+        lawChunks.push({
+          law_number: lawNum,
+          law_year: lawYr,
+          law_type: lawTp,
+          article_number: `صفحة ${index + 1}`,
+          content: cleanContent
+        });
+      });
+
+      setPdfStep(`جاري توليد الـ Vector Embeddings وحفظ عدد ${lawChunks.length} صفحة في السحاب...`);
+      setPdfProgress(90);
+
+      for (let i = 0; i < lawChunks.length; i++) {
+        await db.addTaxLaw(lawChunks[i]);
+      }
+
+      setPdfProgress(100);
+      setPdfStep('اكتملت الفهرسة سحابياً بنجاح!');
+
+      confetti({
+        particleCount: 100,
+        spread: 80,
+        colors: ['#C5A880', '#0F172A']
+      });
+
+      setTimeout(() => {
+        setPdfProcessing(false);
+        loadAllData();
+      }, 1500);
+
+    } catch (err: any) {
+      console.error('PDF Processing error:', err);
+      alert('حدث خطأ أثناء معالجة ملف الـ PDF: ' + err.message);
+      setPdfProcessing(false);
+    }
+  };
+
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName || !newUserEmail || !newUserOrgId || !newUserPassword) {
@@ -372,6 +494,16 @@ export default function SuperAdminDashboard() {
                 >
                   <BookOpen className="w-4 h-4 shrink-0" />
                   <span>مكتبة القوانين الضريبية</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveTab('settings'); setSearchQuery(''); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === 'settings' ? 'bg-brand-gold text-slate-950' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <FolderLock className="w-4 h-4 shrink-0" />
+                  <span>إعدادات النظام والـ AI</span>
                 </button>
               </div>
             </div>
@@ -683,13 +815,26 @@ export default function SuperAdminDashboard() {
                       />
                     </div>
 
-                    <button
-                      onClick={() => setIsLawModalOpen(true)}
-                      className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-gold text-slate-950 rounded-lg text-xs font-bold hover:bg-brand-gold-hover transition-all"
-                    >
-                      <PlusCircle className="w-4 h-4" />
-                      إضافة مادة قانونية جديدة
-                    </button>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <label className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-900 border border-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer">
+                        <BookOpen className="w-4 h-4 text-brand-gold" />
+                        <span>رفع كتاب قانون (PDF)</span>
+                        <input 
+                          type="file" 
+                          accept=".pdf" 
+                          onChange={handlePdfUpload}
+                          className="hidden" 
+                        />
+                      </label>
+
+                      <button
+                        onClick={() => setIsLawModalOpen(true)}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-brand-gold text-slate-950 rounded-lg text-xs font-bold hover:bg-brand-gold-hover transition-all"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        إضافة مادة يدوياً
+                      </button>
+                    </div>
                   </div>
 
                   {/* Laws List */}
@@ -925,6 +1070,66 @@ export default function SuperAdminDashboard() {
                 {lawFormLoading ? 'جاري الحفظ والتدريب...' : 'إدراج القانون سحابياً'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 5: Settings */}
+      {activeTab === 'settings' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-lg space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+              <FolderLock className="w-5 h-5 text-brand-gold" />
+              <h3 className="text-sm font-extrabold text-white">إعدادات مفتاح الذكاء الاصطناعي (Gemini)</h3>
+            </div>
+            
+            <p className="text-slate-400 text-[11px] leading-relaxed">
+              هذا المفتاح يُستخدم لتوليد الردود الذكية الفورية وتحليل ملفات اللجان الضريبية، بالإضافة إلى فهرسة القوانين والكتب المرفوعة سحابياً.
+            </p>
+
+            <div className="space-y-2">
+              <label className="font-bold text-slate-350 block">مفتاح API Key الخاص بـ Gemini*</label>
+              <input 
+                type="password" 
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full bg-slate-950 border border-slate-800 focus:border-brand-gold px-3 py-2 rounded-lg text-xs text-white font-mono text-left"
+              />
+            </div>
+
+            <button
+              onClick={handleSaveGeminiKey}
+              className="px-4 py-2 bg-brand-gold text-slate-950 rounded-lg text-xs font-bold hover:bg-brand-gold-hover transition-all"
+            >
+              حفظ إعدادات المفتاح
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PDF Processing Overlay */}
+      {pdfProcessing && (
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-6 text-center">
+          <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-xl p-8 space-y-6 shadow-2xl">
+            <div className="w-16 h-16 rounded-full bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center mx-auto animate-bounce">
+              <BookOpen className="w-8 h-8 text-brand-gold" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-sm font-extrabold text-white">جاري معالجة وفهرسة كتاب القانون</h3>
+              <p className="text-[11px] text-slate-400 font-bold">{pdfStep}</p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-950 border border-slate-850 h-3 rounded-full overflow-hidden p-0.5">
+              <div 
+                className="bg-brand-gold h-full rounded-full transition-all duration-300"
+                style={{ width: `${pdfProgress}%` }}
+              ></div>
+            </div>
+
+            <span className="text-xs text-brand-gold font-bold block">{pdfProgress}% مكتمل</span>
           </div>
         </div>
       )}

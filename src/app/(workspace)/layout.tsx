@@ -19,6 +19,7 @@ export default function WorkspaceLayout({
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [activeOrgId, setActiveOrgId] = useState<string>('');
+  const [aiActive, setAiActive] = useState(false);
 
   useEffect(() => {
     const resolveTenant = async () => {
@@ -40,6 +41,7 @@ export default function WorkspaceLayout({
     };
 
     resolveTenant();
+    setAiActive(isRealAiActive());
   }, []);
 
   useEffect(() => {
@@ -154,14 +156,14 @@ export default function WorkspaceLayout({
             {/* Gemini AI Status */}
             <div 
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                isRealAiActive 
+                aiActive 
                   ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
                   : 'bg-orange-50 text-orange-700 border-orange-200'
               }`}
-              title={isRealAiActive ? 'محرك Gemini الذكي نشط' : 'محاكي الذكاء الاصطناعي نشط'}
+              title={aiActive ? 'محرك Gemini الذكي نشط' : 'محاكي الذكاء الاصطناعي نشط'}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{isRealAiActive ? 'Gemini نشط' : 'محاكي AI'}</span>
+              <span>{aiActive ? 'Gemini نشط' : 'محاكي AI'}</span>
             </div>
           </div>
         </div>

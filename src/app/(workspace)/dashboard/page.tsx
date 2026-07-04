@@ -31,16 +31,16 @@ export default function DashboardPage() {
 
     // 2. Fetch data from DB
     const fetchData = async () => {
-      const allClients = await db.getClients();
+      const [allClients, allCommittees, allTasks, logs] = await Promise.all([
+        db.getClients(),
+        db.getCommittees(),
+        db.getTasks(),
+        db.getAuditLogs()
+      ]);
+
       setClientsCount(allClients.length);
-
-      const allCommittees = await db.getCommittees();
       setCommittees(allCommittees);
-
-      const allTasks = await db.getTasks();
       setTasks(allTasks);
-
-      const logs = await db.getAuditLogs();
       setAuditLogs(logs);
 
       // Sum disputed amounts for non-resolved committees

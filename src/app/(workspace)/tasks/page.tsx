@@ -46,10 +46,11 @@ export default function TasksPage() {
   }, []);
 
   const fetchData = async () => {
-    const allTasks = await db.getTasks();
+    const [allTasks, allCommittees] = await Promise.all([
+      db.getTasks(),
+      db.getCommittees()
+    ]);
     setTasks(allTasks);
-
-    const allCommittees = await db.getCommittees();
     setCommittees(allCommittees);
 
     const users = db.getProfiles();

@@ -29,10 +29,7 @@ export const Sidebar: React.FC = () => {
 
   const handleLogout = () => {
     db.signOut().then(() => {
-      router.push('/');
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      window.location.href = '/';
     });
   };
 

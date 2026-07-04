@@ -448,18 +448,11 @@ export const db = {
 
   signOut: async () => {
     if (isSupabaseConfigured && supabase) {
-      try {
-        // Prevent hanging the client if supabase signOut hangs due to deleted user session
-        await Promise.race([
-          supabase.auth.signOut(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('SignOut Timeout')), 1000))
-        ]).catch(err => console.warn('Supabase Auth signOut skipped or timed out:', err));
-      } catch (e) {
-        console.warn('Supabase signOut error:', e);
-      }
+      // Fire-and-forget: request signOut in the background to avoid blocking the UI logout transition
+      supabase.auth.signOut().catch(err => console.warn('Supabase Auth signOut error:', err));
     }
     
-    // Explicitly purge local storage credentials and Supabase auth keys
+    // Explicitly purge local storage credentials and Supabase auth keys immediately
     if (typeof window !== 'undefined') {
       localStorage.removeItem('ab_current_user');
       localStorage.removeItem('ab_active_org_id');
@@ -497,6 +490,17 @@ if (typeof window !== 'undefined' && isSupabaseConfigured && supabase) {
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
       if (session?.user) {
+        // Prevent redundant database profiles query if we already have the active profile in localStorage
+        const stored = localStorage.getItem('ab_current_user');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.id === session.user.id) {
+              return; // Already synced
+            }
+          } catch (e) {}
+        }
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')

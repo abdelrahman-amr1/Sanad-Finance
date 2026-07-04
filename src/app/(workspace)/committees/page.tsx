@@ -62,12 +62,14 @@ export default function CommitteesPage() {
   }, []);
 
   const fetchData = async () => {
-    const coms = await db.getCommittees();
+    const [coms, cls] = await Promise.all([
+      db.getCommittees(),
+      db.getClients()
+    ]);
     setCommittees(coms);
     if (coms.length > 0 && !selectedCommittee) {
       setSelectedCommittee(coms[0]);
     }
-    const cls = await db.getClients();
     setClients(cls);
   };
 

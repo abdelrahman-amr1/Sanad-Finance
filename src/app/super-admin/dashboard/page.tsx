@@ -122,7 +122,7 @@ export default function SuperAdminDashboard() {
 
   const handleLogout = () => {
     db.signOut().then(() => {
-      router.push('/super-admin/login');
+      window.location.href = '/super-admin/login';
     });
   };
 

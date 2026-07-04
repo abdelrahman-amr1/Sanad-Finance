@@ -448,8 +448,32 @@ export const db = {
 
   signOut: async () => {
     if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut();
+      try {
+        // Prevent hanging the client if supabase signOut hangs due to deleted user session
+        await Promise.race([
+          supabase.auth.signOut(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('SignOut Timeout')), 1000))
+        ]).catch(err => console.warn('Supabase Auth signOut skipped or timed out:', err));
+      } catch (e) {
+        console.warn('Supabase signOut error:', e);
+      }
     }
+    
+    // Explicitly purge local storage credentials and Supabase auth keys
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ab_current_user');
+      localStorage.removeItem('ab_active_org_id');
+      localStorage.removeItem('ab_tenant_org');
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('sb-') || key.includes('-auth-token'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {}
+    }
+    
     db.setCurrentUser(null);
   },
 

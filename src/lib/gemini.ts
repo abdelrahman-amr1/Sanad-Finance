@@ -3,13 +3,13 @@ import { db, TaxLaw, Committee } from './supabase';
 
 let cachedDbKey = '';
 
-const getAiClient = async () => {
-  let clientApiKey = '';
-  if (typeof window !== 'undefined') {
+const getAiClient = async (customApiKey?: string) => {
+  let clientApiKey = customApiKey || '';
+  if (!clientApiKey && typeof window !== 'undefined') {
     clientApiKey = localStorage.getItem('ab_gemini_api_key') || '';
   }
 
-  if (!cachedDbKey) {
+  if (!clientApiKey && !cachedDbKey) {
     try {
       const val = await db.getSystemSetting('gemini_api_key');
       if (val) cachedDbKey = val;
@@ -47,13 +47,14 @@ export interface AnalysisResponse {
 
 export const geminiService = {
   // 1. RAG-based tax question answering
-  askTaxQuestion: async (query: string, bypassProxy = false): Promise<RAGResponse> => {
+  askTaxQuestion: async (query: string, bypassProxy = false, customApiKey?: string): Promise<RAGResponse> => {
     if (typeof window !== 'undefined' && !bypassProxy) {
       try {
+        const clientKey = localStorage.getItem('ab_gemini_api_key') || '';
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'askTaxQuestion', query })
+          body: JSON.stringify({ action: 'askTaxQuestion', query, apiKey: clientKey || undefined })
         });
         if (res.ok) return await res.json();
       } catch (err) {
@@ -83,7 +84,7 @@ ${contextText}
 4. حافظ على تنسيق رائع ومقروء للملف باستخدام العناوين والنقاط.
 `;
 
-    const ai = await getAiClient();
+    const ai = await getAiClient(customApiKey);
     if (ai) {
       try {
         const response = await ai.models.generateContent({
@@ -132,13 +133,14 @@ ${contextText}
   },
 
   // 2. Summary & analysis of a committee case
-  analyzeCommittee: async (committee: Committee, bypassProxy = false): Promise<AnalysisResponse> => {
+  analyzeCommittee: async (committee: Committee, bypassProxy = false, customApiKey?: string): Promise<AnalysisResponse> => {
     if (typeof window !== 'undefined' && !bypassProxy) {
       try {
+        const clientKey = localStorage.getItem('ab_gemini_api_key') || '';
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'analyzeCommittee', committee })
+          body: JSON.stringify({ action: 'analyzeCommittee', committee, apiKey: clientKey || undefined })
         });
         if (res.ok) return await res.json();
       } catch (err) {
@@ -165,7 +167,7 @@ ${contextText}
 
     const systemPrompt = `أنت الخبير القانوني الأول ورئيس لجان الطعن لشركة "Sameh Samir - A&B team". صغ تقريراً فنياً بأسلوب محترف باللغة العربية.`;
 
-    const ai = await getAiClient();
+    const ai = await getAiClient(customApiKey);
     if (ai) {
       try {
         const response = await ai.models.generateContent({
@@ -216,7 +218,6 @@ ${contextText}
     };
   },
 
-  // 3. Automated Legal appeal / document drafting
   generateDocumentDraft: async (
     clientName: string, 
     taxCard: string, 
@@ -227,15 +228,18 @@ ${contextText}
     disputedAmount: string, 
     taxYears: string,
     argumentsText: string,
-    bypassProxy = false
+    bypassProxy = false,
+    customApiKey?: string
   ): Promise<{ draft: string; isSimulated: boolean }> => {
     if (typeof window !== 'undefined' && !bypassProxy) {
       try {
+        const clientKey = localStorage.getItem('ab_gemini_api_key') || '';
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'generateDocumentDraft',
+            apiKey: clientKey || undefined,
             draftParams: {
               clientName,
               taxCard,
@@ -278,7 +282,7 @@ ${contextText}
 4. استخدم صياغة فخمة، رسمية خالية من الأخطاء اللغوية.
 `;
 
-    const ai = await getAiClient();
+    const ai = await getAiClient(customApiKey);
     if (ai) {
       try {
         const response = await ai.models.generateContent({

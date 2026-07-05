@@ -237,3 +237,21 @@ BEGIN
     LIMIT match_count;
 END;
 $$;
+
+-- =========================================================================
+-- 6. SYSTEM SETTINGS TABLE (GLOBAL CONFIGURATIONS)
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.system_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable RLS
+ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
+
+-- Policies for system_settings
+CREATE POLICY "Allow public read access to system_settings" ON public.system_settings FOR SELECT USING (true);
+CREATE POLICY "Allow super_admins to manage system_settings" ON public.system_settings FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'super_admin')
+);

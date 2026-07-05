@@ -482,6 +482,39 @@ export const db = {
       }
     }
     return mockDb.getProfiles().find(p => p.id === id) || null;
+  },
+
+  getSystemSetting: async (key: string): Promise<string | null> => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', key)
+          .maybeSingle();
+        if (!error && data) {
+          return data.value;
+        }
+      } catch (e) {
+        console.warn('system_settings table query failed, it may not exist yet:', e);
+      }
+    }
+    return null;
+  },
+
+  setSystemSetting: async (key: string, value: string): Promise<boolean> => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase
+          .from('system_settings')
+          .upsert([{ key, value, updated_at: new Date().toISOString() }]);
+        return !error;
+      } catch (e) {
+        console.error('Failed to upsert system setting:', e);
+        return false;
+      }
+    }
+    return false;
   }
 };
 

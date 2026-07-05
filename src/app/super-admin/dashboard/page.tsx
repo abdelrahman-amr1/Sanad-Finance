@@ -88,9 +88,25 @@ export default function SuperAdminDashboard() {
     setCurrentUser(user);
     loadAllData();
 
-    if (typeof window !== 'undefined') {
-      setGeminiKeyInput(localStorage.getItem('ab_gemini_api_key') || '');
-    }
+    const loadSettings = async () => {
+      let key = '';
+      if (typeof window !== 'undefined') {
+        key = localStorage.getItem('ab_gemini_api_key') || '';
+      }
+      if (!key) {
+        try {
+          const dbKey = await db.getSystemSetting('gemini_api_key');
+          if (dbKey) {
+            key = dbKey;
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('ab_gemini_api_key', dbKey);
+            }
+          }
+        } catch (e) {}
+      }
+      setGeminiKeyInput(key);
+    };
+    loadSettings();
   }, [router]);
 
   const loadAllData = async () => {
@@ -231,15 +247,28 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  const handleSaveGeminiKey = () => {
+  const handleSaveGeminiKey = async () => {
+    if (!geminiKeyInput.trim()) {
+      alert('يرجى إدخال مفتاح صالح');
+      return;
+    }
+
     if (typeof window !== 'undefined') {
       localStorage.setItem('ab_gemini_api_key', geminiKeyInput);
-      confetti({
-        particleCount: 40,
-        spread: 40,
-        colors: ['#C5A880', '#0F172A']
-      });
-      alert('تم حفظ مفتاح Gemini API بنجاح في المتصفح!');
+    }
+
+    const success = await db.setSystemSetting('gemini_api_key', geminiKeyInput);
+
+    confetti({
+      particleCount: 40,
+      spread: 40,
+      colors: ['#C5A880', '#0F172A']
+    });
+
+    if (success) {
+      alert('تم حفظ مفتاح Gemini API بنجاح في قاعدة البيانات وسحابياً لكافة المستخدمين!');
+    } else {
+      alert('تم حفظ المفتاح محلياً بالمتصفح، ولكن تعذر حفظه في قاعدة البيانات. يرجى التأكد من تشغيل جدول الإعدادات system_settings في Supabase.');
     }
   };
 

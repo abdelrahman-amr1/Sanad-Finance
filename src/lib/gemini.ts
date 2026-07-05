@@ -1,19 +1,35 @@
 import { GoogleGenAI } from '@google/genai';
 import { db, TaxLaw, Committee } from './supabase';
 
-const getAiClient = () => {
+let cachedDbKey = '';
+
+const getAiClient = async () => {
   let clientApiKey = '';
   if (typeof window !== 'undefined') {
     clientApiKey = localStorage.getItem('ab_gemini_api_key') || '';
   }
-  const key = clientApiKey || process.env.GEMINI_API_KEY || '';
+
+  if (!cachedDbKey) {
+    try {
+      const val = await db.getSystemSetting('gemini_api_key');
+      if (val) cachedDbKey = val;
+    } catch (e) {
+      console.warn('Failed to load global Gemini key from database settings:', e);
+    }
+  }
+
+  const key = clientApiKey || cachedDbKey || process.env.GEMINI_API_KEY || '';
   if (!key) return null;
   return new GoogleGenAI({ apiKey: key });
 };
 
-// Helper to determine if real AI is active
+// Helper to determine if real AI is active (checks environment and cached key)
 export const isRealAiActive = (): boolean => {
-  return !!getAiClient();
+  let clientApiKey = '';
+  if (typeof window !== 'undefined') {
+    clientApiKey = localStorage.getItem('ab_gemini_api_key') || '';
+  }
+  return !!(clientApiKey || cachedDbKey || process.env.GEMINI_API_KEY);
 };
 
 export interface RAGResponse {
@@ -67,7 +83,7 @@ ${contextText}
 4. حافظ على تنسيق رائع ومقروء للملف باستخدام العناوين والنقاط.
 `;
 
-    const ai = getAiClient();
+    const ai = await getAiClient();
     if (ai) {
       try {
         const response = await ai.models.generateContent({
@@ -149,7 +165,7 @@ ${contextText}
 
     const systemPrompt = `أنت الخبير القانوني الأول ورئيس لجان الطعن لشركة "Sameh Samir - A&B team". صغ تقريراً فنياً بأسلوب محترف باللغة العربية.`;
 
-    const ai = getAiClient();
+    const ai = await getAiClient();
     if (ai) {
       try {
         const response = await ai.models.generateContent({
@@ -262,7 +278,7 @@ ${contextText}
 4. استخدم صياغة فخمة، رسمية خالية من الأخطاء اللغوية.
 `;
 
-    const ai = getAiClient();
+    const ai = await getAiClient();
     if (ai) {
       try {
         const response = await ai.models.generateContent({

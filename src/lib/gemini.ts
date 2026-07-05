@@ -88,7 +88,7 @@ ${contextText}
     if (ai) {
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.5-flash',
           contents: [
             { role: 'user', parts: [{ text: `سؤال الممول/الموظف: ${query}` }] }
           ],
@@ -171,7 +171,7 @@ ${contextText}
     if (ai) {
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.5-flash',
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           config: {
             systemInstruction: systemPrompt,
@@ -286,7 +286,7 @@ ${contextText}
     if (ai) {
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-1.5-pro', // Using Pro for complex legal drafting
+          model: 'gemini-2.5-pro', // Using Pro for complex legal drafting
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           config: {
             temperature: 0.4

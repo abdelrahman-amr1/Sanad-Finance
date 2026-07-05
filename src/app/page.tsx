@@ -115,6 +115,9 @@ export default function LoginPage() {
     
     setLoading(true);
     setError('');
+    if (typeof window !== 'undefined') {
+      (window as any).__isLoggingIn = true;
+    }
 
     try {
       if (isSupabaseConfigured) {
@@ -138,6 +141,9 @@ export default function LoginPage() {
               await db.signOut();
               setError('عذراً، هذا الحساب غير مصرح له بالدخول لمكتب الاستشارات هذا.');
               setLoading(false);
+              if (typeof window !== 'undefined') {
+                (window as any).__isLoggingIn = false;
+              }
               return;
             }
 
@@ -169,6 +175,9 @@ export default function LoginPage() {
       setError(err.message || 'حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
+      if (typeof window !== 'undefined') {
+        (window as any).__isLoggingIn = false;
+      }
     }
   };
 

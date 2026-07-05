@@ -57,6 +57,9 @@ export default function SuperAdminLoginPage() {
     
     setLoading(true);
     setError('');
+    if (typeof window !== 'undefined') {
+      (window as any).__isLoggingIn = true;
+    }
 
     try {
       if (isSupabaseConfigured) {
@@ -70,6 +73,9 @@ export default function SuperAdminLoginPage() {
               await db.signOut();
               setError('عذراً، هذه البوابة مخصصة للإدارة العامة والسوبر أدمن فقط.');
               setLoading(false);
+              if (typeof window !== 'undefined') {
+                (window as any).__isLoggingIn = false;
+              }
               return;
             }
 
@@ -101,6 +107,9 @@ export default function SuperAdminLoginPage() {
       setError(err.message || 'حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
+      if (typeof window !== 'undefined') {
+        (window as any).__isLoggingIn = false;
+      }
     }
   };
 

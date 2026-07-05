@@ -15,12 +15,18 @@ import {
   ChevronDown,
   RefreshCw,
   Building2,
-  LogOut
+  LogOut,
+  X
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { db, Profile, isSupabaseConfigured } from '@/lib/supabase';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose = () => {} }) => {
   const pathname = usePathname();
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
@@ -94,10 +100,19 @@ export const Sidebar: React.FC = () => {
   if (!currentUser) return null;
 
   return (
-    <aside className="w-64 bg-slate-900 text-white h-screen flex flex-col fixed right-0 top-0 border-l border-slate-800 z-30 no-print">
+    <aside className={`w-64 bg-slate-900 text-white h-screen flex flex-col fixed right-0 top-0 border-l border-slate-800 z-30 no-print transition-transform duration-300 md:translate-x-0 ${
+      isOpen ? 'translate-x-0' : 'translate-x-full'
+    }`}>
       {/* Brand Header */}
       <div className="p-5 border-b border-slate-850 flex items-center justify-between">
         <Logo />
+        <button 
+          onClick={onClose}
+          className="md:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          title="إغلاق القائمة"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation Links */}

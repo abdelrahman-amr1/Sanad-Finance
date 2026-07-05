@@ -490,6 +490,11 @@ if (typeof window !== 'undefined' && isSupabaseConfigured && supabase) {
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
       if (session?.user) {
+        // Skip background fetch if we are performing a manual login (the login form will fetch it)
+        if ((window as any).__isLoggingIn) {
+          return;
+        }
+
         // Prevent redundant database profiles query if we already have the active profile in localStorage
         const stored = localStorage.getItem('ab_current_user');
         if (stored) {

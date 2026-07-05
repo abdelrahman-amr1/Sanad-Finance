@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { db, isSupabaseConfigured, Profile, Organization } from '@/lib/supabase';
 import { getTenantFromHostname, getSlugFromHostname } from '@/lib/mockDb';
 import { isRealAiActive } from '@/lib/gemini';
-import { Database, Sparkles, AlertTriangle, ShieldCheck, Building2 } from 'lucide-react';
+import { Database, Sparkles, AlertTriangle, ShieldCheck, Building2, Menu } from 'lucide-react';
 
 export default function WorkspaceLayout({
   children,
@@ -20,6 +20,7 @@ export default function WorkspaceLayout({
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [activeOrgId, setActiveOrgId] = useState<string>('');
   const [aiActive, setAiActive] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const resolveTenant = async () => {
@@ -100,18 +101,33 @@ export default function WorkspaceLayout({
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans" dir="rtl">
-      {/* 1. Right Sidebar */}
-      <Sidebar />
+      {/* 1. Backdrop overlay for mobile */}
+      {isSidebarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)}
+          className="md:hidden fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-25 transition-opacity"
+        />
+      )}
 
-      {/* 2. Main Content Container (offset by sidebar width, 256px / w-64) */}
-      <div className="flex-1 mr-64 flex flex-col min-h-screen">
+      {/* 2. Right Sidebar */}
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+      {/* 3. Main Content Container (offset by sidebar width on desktop) */}
+      <div className="flex-1 md:mr-64 mr-0 flex flex-col min-h-screen">
         
         {/* Top Header / Bar */}
-        <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-20 no-print">
-          <div>
-            <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 no-print">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+              title="فتح القائمة"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-800 flex items-center gap-1.5">
               أهلاً بك، {currentUser.name}
-              <span className="text-xs font-normal text-slate-400">
+              <span className="hidden sm:inline text-xs font-normal text-slate-400">
                 | دورك الحالي: {currentUser.role === 'super_admin' ? 'سوبر أدمن (سند)' : currentUser.role === 'admin' ? 'مدير المكتب' : currentUser.role === 'consultant' ? 'مستشار ضريبي' : 'موظف إداري'}
               </span>
             </h1>

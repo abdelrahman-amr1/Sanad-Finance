@@ -96,22 +96,14 @@ export default function SuperAdminDashboard() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch organizations
-      const orgs = await db.getOrganizations();
+      const [orgs, usersData, laws] = await Promise.all([
+        db.getOrganizations(),
+        fetch('/api/admin/users').then(res => res.ok ? res.json() : { users: null }),
+        db.getTaxLaws()
+      ]);
+
       setOrganizations(orgs);
-
-      // 2. Fetch users globally
-      const response = await fetch('/api/admin/users');
-      if (response.ok) {
-        const data = await response.json();
-        setUsersList(data.users || []);
-      } else {
-        // Mock fallback
-        setUsersList(db.getProfiles());
-      }
-
-      // 3. Fetch tax laws
-      const laws = await db.getTaxLaws();
+      setUsersList(usersData.users || db.getProfiles());
       setLawsList(laws);
     } catch (e) {
       console.error('Failed to load global admin data:', e);

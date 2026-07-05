@@ -14,10 +14,19 @@ import {
   MessageSquare,
   ChevronLeft,
   Check,
-  Briefcase
+  Briefcase,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { db, TaxLaw, Client } from '@/lib/supabase';
 import { geminiService } from '@/lib/gemini';
+
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  created_at: string;
+}
 
 interface Message {
   id: string;
@@ -31,15 +40,11 @@ export default function ConsultantPage() {
   const [activeTab, setActiveTab] = useState<'chat' | 'drafter'>('chat');
   const [clients, setClients] = useState<Client[]>([]);
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>('');
+
   // --- Chat State ---
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      sender: 'assistant',
-      text: 'مرحباً بك في المستشار الضريبي الرقمي لشركة Sameh Samir - A&B team. أنا هنا لمساعدتك في الإجابة على الاستفسارات المتعلقة بقوانين الضرائب المصرية (الدخل، القيمة المضافة، الإجراءات الموحدة). كيف يمكنني مساعدتك اليوم؟',
-      timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
   const [inputMessage, setInputMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [selectedLaw, setSelectedLaw] = useState<TaxLaw | null>(null);
@@ -65,7 +70,98 @@ export default function ConsultantPage() {
       setClients(cls);
     };
     fetchClients();
+
+    const user = db.getCurrentUser();
+    setCurrentUser(user);
+    if (user) {
+      const key = `ab_chat_sessions_${user.id}_${db.getActiveOrgId()}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as ChatSession[];
+          if (parsed && parsed.length > 0) {
+            setSessions(parsed);
+            setActiveSessionId(parsed[0].id);
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to parse sessions:', e);
+        }
+      }
+      // Create a default welcome session if none exists
+      const defaultSession: ChatSession = {
+        id: `chat-${Date.now()}`,
+        title: 'استشارة جديدة',
+        created_at: new Date().toLocaleDateString('ar-EG'),
+        messages: [
+          {
+            id: 'welcome',
+            sender: 'assistant',
+            text: 'مرحباً بك في المستشار الضريبي الرقمي لشركة Sameh Samir - A&B team. أنا هنا لمساعدتك في الإجابة على الاستفسارات المتعلقة بقوانين الضرائب المصرية (الدخل، القيمة المضافة، الإجراءات الموحدة). كيف يمكنني مساعدتك اليوم؟',
+            timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+          }
+        ]
+      };
+      setSessions([defaultSession]);
+      setActiveSessionId(defaultSession.id);
+      localStorage.setItem(key, JSON.stringify([defaultSession]));
+    }
   }, []);
+
+  const saveSessions = (updatedSessions: ChatSession[]) => {
+    setSessions(updatedSessions);
+    const user = currentUser || db.getCurrentUser();
+    if (user) {
+      const key = `ab_chat_sessions_${user.id}_${db.getActiveOrgId()}`;
+      localStorage.setItem(key, JSON.stringify(updatedSessions));
+    }
+  };
+
+  const handleCreateNewChat = () => {
+    const newSession: ChatSession = {
+      id: `chat-${Date.now()}`,
+      title: 'استشارة جديدة',
+      created_at: new Date().toLocaleDateString('ar-EG'),
+      messages: [
+        {
+          id: 'welcome',
+          sender: 'assistant',
+          text: 'مرحباً بك في المستشار الضريبي الرقمي لشركة Sameh Samir - A&B team. أنا هنا لمساعدتك في الإجابة على الاستفسارات المتعلقة بقوانين الضرائب المصرية (الدخل، القيمة المضافة، الإجراءات الموحدة). كيف يمكنني مساعدتك اليوم؟',
+          timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+        }
+      ]
+    };
+    const updated = [newSession, ...sessions];
+    saveSessions(updated);
+    setActiveSessionId(newSession.id);
+  };
+
+  const handleDeleteChat = (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    const filtered = sessions.filter(s => s.id !== sessionId);
+    if (filtered.length === 0) {
+      const defaultSession: ChatSession = {
+        id: `chat-${Date.now()}`,
+        title: 'استشارة جديدة',
+        created_at: new Date().toLocaleDateString('ar-EG'),
+        messages: [
+          {
+            id: 'welcome',
+            sender: 'assistant',
+            text: 'مرحباً بك في المستشار الضريبي الرقمي لشركة Sameh Samir - A&B team. أنا هنا لمساعدتك في الإجابة على الاستفسارات المتعلقة بقوانين الضرائب المصرية (الدخل، القيمة المضافة، الإجراءات الموحدة). كيف يمكنني مساعدتك اليوم؟',
+            timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+          }
+        ]
+      };
+      saveSessions([defaultSession]);
+      setActiveSessionId(defaultSession.id);
+    } else {
+      saveSessions(filtered);
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(filtered[0].id);
+      }
+    }
+  };
 
   // Sync client dropdown with input fields
   const handleClientSelect = (clientId: string) => {
@@ -92,7 +188,7 @@ export default function ConsultantPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim() || chatLoading) return;
+    if (!inputMessage.trim() || chatLoading || !activeSessionId) return;
 
     const userText = inputMessage;
     setInputMessage('');
@@ -104,7 +200,21 @@ export default function ConsultantPage() {
       text: userText,
       timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
     };
-    setMessages(prev => [...prev, userMsg]);
+    
+    const updatedSessions = sessions.map(s => {
+      if (s.id === activeSessionId) {
+        const isFirstUserMessage = s.messages.filter(m => m.sender === 'user').length === 0;
+        const newTitle = isFirstUserMessage ? (userText.length > 25 ? userText.substring(0, 25) + '...' : userText) : s.title;
+        return {
+          ...s,
+          title: newTitle,
+          messages: [...s.messages, userMsg]
+        };
+      }
+      return s;
+    });
+
+    saveSessions(updatedSessions);
     setChatLoading(true);
 
     try {
@@ -116,7 +226,17 @@ export default function ConsultantPage() {
         timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
         sources: result.sources
       };
-      setMessages(prev => [...prev, assistantMsg]);
+      
+      const sessionsWithReply = updatedSessions.map(s => {
+        if (s.id === activeSessionId) {
+          return {
+            ...s,
+            messages: [...s.messages, assistantMsg]
+          };
+        }
+        return s;
+      });
+      saveSessions(sessionsWithReply);
     } catch (err) {
       console.error(err);
     } finally {
@@ -160,6 +280,9 @@ export default function ConsultantPage() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
+  const activeSession = sessions.find(s => s.id === activeSessionId);
+  const activeMessages = activeSession ? activeSession.messages : [];
+
   return (
     <div className="space-y-6" dir="rtl">
       
@@ -202,10 +325,49 @@ export default function ConsultantPage() {
 
       {/* Tab 1: Chat interface */}
       {activeTab === 'chat' && (
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Chat main area (3 cols) */}
-          <div className="xl:col-span-3 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm h-[calc(100vh-200px)] overflow-hidden">
+          {/* Chat Sessions History Sidebar (3 cols) */}
+          <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl shadow-sm p-4 h-[calc(100vh-200px)] flex flex-col space-y-4">
+            <button
+              onClick={handleCreateNewChat}
+              className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-all shadow-md"
+            >
+              <Plus className="w-4 h-4 text-brand-gold" />
+              محادثة جديدة
+            </button>
+            
+            <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+              <span className="text-[10px] font-bold text-slate-400 block mb-2 px-1">سجل الاستشارات السابقة</span>
+              {sessions.map(s => (
+                <div
+                  key={s.id}
+                  onClick={() => setActiveSessionId(s.id)}
+                  className={`group flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold cursor-pointer border transition-all ${
+                    s.id === activeSessionId
+                      ? 'bg-slate-50 border-brand-gold/40 text-slate-900 shadow-sm'
+                      : 'border-transparent text-slate-600 hover:bg-slate-50/50 hover:text-slate-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <MessageSquare className={`w-3.5 h-3.5 flex-shrink-0 ${s.id === activeSessionId ? 'text-brand-gold' : 'text-slate-400'}`} />
+                    <span className="truncate" title={s.title}>{s.title}</span>
+                  </div>
+                  
+                  <button
+                    onClick={(e) => handleDeleteChat(e, s.id)}
+                    className="p-1 rounded text-slate-450 hover:bg-slate-105 hover:text-red-650 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                    title="حذف المحادثة"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Chat main area (6 cols) */}
+          <div className="lg:col-span-6 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm h-[calc(100vh-200px)] overflow-hidden">
             {/* Header info */}
             <div className="bg-slate-50 px-4 py-3 border-b border-slate-150 flex justify-between items-center text-xs">
               <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
@@ -217,7 +379,7 @@ export default function ConsultantPage() {
 
             {/* Message Streams */}
             <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar bg-slate-50/20">
-              {messages.map((msg) => (
+              {activeMessages.map((msg) => (
                 <div 
                   key={msg.id}
                   className={`flex ${msg.sender === 'user' ? 'justify-start' : 'justify-end'} animate-in fade-in duration-200`}
@@ -295,8 +457,8 @@ export default function ConsultantPage() {
             </form>
           </div>
 
-          {/* Source Law Detail Viewer Sidebar (1 col) */}
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 h-[calc(100vh-200px)] overflow-y-auto space-y-4">
+          {/* Source Law Detail Viewer Sidebar (3 cols) */}
+          <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl shadow-sm p-4 h-[calc(100vh-200px)] overflow-y-auto space-y-4">
             <h3 className="text-xs font-extrabold text-slate-800 border-b border-slate-150 pb-2.5 flex items-center gap-1.5">
               <Scale className="w-4 h-4 text-brand-gold" />
               عارض نصوص ومواد القوانين

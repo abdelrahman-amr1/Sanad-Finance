@@ -31,7 +31,20 @@ export interface AnalysisResponse {
 
 export const geminiService = {
   // 1. RAG-based tax question answering
-  askTaxQuestion: async (query: string): Promise<RAGResponse> => {
+  askTaxQuestion: async (query: string, bypassProxy = false): Promise<RAGResponse> => {
+    if (typeof window !== 'undefined' && !bypassProxy) {
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'askTaxQuestion', query })
+        });
+        if (res.ok) return await res.json();
+      } catch (err) {
+        console.error('Failed to query Gemini API proxy, falling back:', err);
+      }
+    }
+
     // 1. Retrieve relevant law articles
     const matchedLaws = await db.searchLaws(query);
     
@@ -103,7 +116,20 @@ ${contextText}
   },
 
   // 2. Summary & analysis of a committee case
-  analyzeCommittee: async (committee: Committee): Promise<AnalysisResponse> => {
+  analyzeCommittee: async (committee: Committee, bypassProxy = false): Promise<AnalysisResponse> => {
+    if (typeof window !== 'undefined' && !bypassProxy) {
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'analyzeCommittee', committee })
+        });
+        if (res.ok) return await res.json();
+      } catch (err) {
+        console.error('Failed to query Gemini API proxy, falling back:', err);
+      }
+    }
+
     const prompt = `
 قم بتحليل تفاصيل النزاع الضريبي الخاص بملف اللجنة التالي وصياغة خلاصة وتوصيات قانونية دقيقة.
 
@@ -139,10 +165,6 @@ ${contextText}
         const rawText = response.text || '';
         
         await db.addAuditLog('تحليل ملف لجنة بالذكاء الاصطناعي', `العميل: ${committee.client_name} - المرحلة: ${committee.stage}`);
-        
-        // Split text roughly by sections
-        const lines = rawText.split('\n');
-        const summary = lines.slice(0, 5).join('\n');
         
         return {
           summary: rawText,
@@ -188,8 +210,35 @@ ${contextText}
     subject: string, 
     disputedAmount: string, 
     taxYears: string,
-    argumentsText: string
+    argumentsText: string,
+    bypassProxy = false
   ): Promise<{ draft: string; isSimulated: boolean }> => {
+    if (typeof window !== 'undefined' && !bypassProxy) {
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'generateDocumentDraft',
+            draftParams: {
+              clientName,
+              taxCard,
+              fileNum,
+              authority,
+              stage,
+              subject,
+              disputedAmount,
+              taxYears,
+              argumentsText
+            }
+          })
+        });
+        if (res.ok) return await res.json();
+      } catch (err) {
+        console.error('Failed to query Gemini API proxy, falling back:', err);
+      }
+    }
+
     const prompt = `
 قم بصياغة "صحيفة طعن ضريبي رسمية" أو "مذكرة دفاع قانونية" مع مراعاة البيانات الرسمية التالية:
 

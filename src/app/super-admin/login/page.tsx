@@ -124,7 +124,7 @@ export default function SuperAdminLoginPage() {
         <div className="flex flex-col items-center justify-center mb-8">
           <Logo showText={false} className="scale-125 mb-4" />
           <h2 className="text-xl font-extrabold text-white text-center">
-            سند للتمويل | بوابة الإشراف العام
+            سند للاستشارات والضرائب | بوابة الإشراف العام
           </h2>
           <p className="mt-1.5 text-xs text-brand-gold font-bold tracking-wide text-center uppercase flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-brand-gold" />
@@ -254,9 +254,9 @@ export default function SuperAdminLoginPage() {
         </div>
 
         <p className="mt-8 text-center text-[10px] text-slate-500 leading-relaxed">
-          نظام سند لإدارة التمويل والاستشارات الضريبية متعدد المكاتب.
+          نظام سند لإدارة مكاتب المحاسبة والاستشارات الضريبية والقانونية متعدد المكاتب.
           <br />
-          حقوق الطبع محفوظة &copy; {new Date().getFullYear()} شركة سند للتمويل.
+          حقوق الطبع محفوظة &copy; {new Date().getFullYear()} شركة سند للاستشارات والضرائب.
         </p>
       </div>
     </div>

@@ -65,7 +65,7 @@ export default function LawyerOfficePage({ params }: PageProps) {
         <Scale className="w-16 h-16 text-brand-gold mb-6 animate-pulse" />
         <h2 className="text-xl font-extrabold text-white mb-2">مكتب غير مسجل</h2>
         <p className="text-xs text-slate-400 max-w-sm leading-relaxed mb-6">
-          عذراً، هذا الرابط الفرعي غير مرتبط بأي مكتب استشاري مسجل في منصة سند للتمويل حالياً.
+          عذراً، هذا الرابط الفرعي غير مرتبط بأي مكتب استشاري مسجل في منصة سند للاستشارات والضرائب حالياً.
         </p>
         <button 
           onClick={() => router.push('/')}

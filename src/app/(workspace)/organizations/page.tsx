@@ -144,7 +144,7 @@ export default function OrganizationsPage() {
         <ShieldAlert className="w-16 h-16 text-red-650 mx-auto animate-bounce" />
         <h3 className="text-lg font-extrabold text-slate-800">صلاحيات غير كافية</h3>
         <p className="text-xs text-slate-550 leading-relaxed font-medium">
-          عذراً، تقتصر صلاحية إضافة المكاتب الاستشارية وإدارة البنية التحتية بالكامل على **المدير العام لشركة سند للتمويل**.
+          عذراً، تقتصر صلاحية إضافة المكاتب الاستشارية وإدارة البنية التحتية بالكامل على **المدير العام لشركة سند للاستشارات والضرائب**.
           يرجى التبديل لدور **(أ. عبد الرحمن عمرو)** من محاكي الصلاحيات أسفل القائمة الجانبية لتصفح هذا القسم.
         </p>
       </div>
@@ -159,7 +159,7 @@ export default function OrganizationsPage() {
         <div>
           <h2 className="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
             <Building2 className="w-6 h-6 text-brand-gold" />
-            إدارة المكاتب والمنصات التابعة (Sanad Finance SaaS)
+            إدارة المكاتب والمنصات التابعة (Sanad Tax & Legal Consulting SaaS)
           </h2>
           <p className="text-slate-500 text-xs mt-1">
             بوابة الإشراف العام لـ أ. عبد الرحمن عمرو لإضافة وتحديث بيانات المكاتب الاستشارية وتفاصيلها.

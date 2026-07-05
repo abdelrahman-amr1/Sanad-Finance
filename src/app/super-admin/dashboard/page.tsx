@@ -426,7 +426,7 @@ export default function SuperAdminDashboard() {
             <FolderLock className="w-5 h-5 text-brand-gold" />
           </div>
           <div>
-            <h1 className="text-sm font-extrabold text-white">سند للتمويل | لوحة الإشراف العام</h1>
+            <h1 className="text-sm font-extrabold text-white">سند للاستشارات والضرائب | لوحة الإشراف العام</h1>
             <p className="text-[10px] text-slate-400 font-semibold">بوابة تحكم السوبر أدمن لإدارة المنصات (SaaS Control Panel)</p>
           </div>
         </div>
@@ -520,7 +520,7 @@ export default function SuperAdminDashboard() {
           </div>
 
           <div className="text-[10px] text-slate-500 font-semibold text-center border-t border-slate-800 pt-4">
-            سند للتمويل SaaS v2.0
+            سند للاستشارات والضرائب SaaS v2.0
             <br />
             إصدار حماية وتأمين الممولين
           </div>
